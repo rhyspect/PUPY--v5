@@ -1,4 +1,4 @@
-﻿// @ts-ignore - Vercel function runtime resolves the built backend bundle at deploy time.
-import app from '../../../后端V5/dist/index.js';
+﻿// @ts-ignore - generated during build by scripts/sync-backend-runtime.mjs
+import app from './_backend/dist/index.js';
 
 export default app;
