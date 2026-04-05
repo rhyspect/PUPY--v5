@@ -34,11 +34,23 @@ const copyDirectory = (sourceDir, targetRoot) => {
     }
 
     if (entry.isFile() || statSync(sourcePath).isFile()) {
+      if (sourcePath.endsWith('.d.ts') || sourcePath.endsWith('.d.ts.map') || sourcePath.endsWith('.js.map')) {
+        continue;
+      }
       mkdirSync(path.dirname(targetPath), { recursive: true });
       copyFileSync(sourcePath, targetPath);
     }
   }
 };
+
+if (!existsSync(backendDir)) {
+  if (existsSync(targetDir)) {
+    process.exit(0);
+  }
+
+  console.error('Backend source directory is missing and no bundled runtime is available.');
+  process.exit(1);
+}
 
 if (!existsSync(backendNodeModules)) {
   run('npm', ['install'], backendDir);
@@ -54,3 +66,4 @@ if (existsSync(backendPublic)) {
   copyDirectory(backendPublic, path.resolve(targetDir, 'public'));
   copyDirectory(backendPublic, path.resolve(targetDir, 'dist', 'public'));
 }
+
