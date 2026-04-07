@@ -82,6 +82,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [verifiedUser, setVerifiedUser] = useState<ApiUser | null>(null);
   const [loginData, setLoginData] = useState({ account: '', password: '' });
   const [registerData, setRegisterData] = useState({ phone: '', email: '', code: '', password: '' });
+  const [resetData, setResetData] = useState({ account: '', code: '', password: '' });
+  const [resetFeedback, setResetFeedback] = useState<string | null>(null);
   const [ownerData, setOwnerData] = useState<Partial<Owner>>({
     name: 'PUPY 探索者',
     photos: [],
@@ -103,6 +105,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   const changeStep = (nextStep: Step) => {
     setSubmitError(null);
+    setResetFeedback(null);
     setStep(nextStep);
   };
 
@@ -152,6 +155,27 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       return false;
     }
     return true;
+  };
+
+  const handlePasswordReset = () => {
+    if (!resetData.account.trim()) {
+      setResetFeedback(null);
+      setSubmitError('请先填写需要找回的邮箱或手机号。');
+      return;
+    }
+    if (resetData.code.trim() !== DEMO_ACCESS_CODE) {
+      setResetFeedback(null);
+      setSubmitError(`测试验证码请输入 ${DEMO_ACCESS_CODE}，后续可替换为真实短信或邮件验证码。`);
+      return;
+    }
+    if (resetData.password.trim().length < 6) {
+      setResetFeedback(null);
+      setSubmitError('新密码至少需要 6 位。');
+      return;
+    }
+
+    setSubmitError(null);
+    setResetFeedback('密码重置申请已校验通过。当前本地环境未开启短信/邮件服务，请返回登录或联系管理员完成真实重置。');
   };
 
   const enterExperience = async (channel: 'phone' | 'email') => {
@@ -297,6 +321,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             mbti: owner.mbti,
             signature: owner.signature,
             avatar_url: owner.photos?.[0] || owner.avatar,
+            photos: owner.photos,
             bio: owner.signature,
           }),
           apiService.createPet({
@@ -413,13 +438,17 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         )}
 
         {step === 'forgot_password' && (
-          <StepShell step="forgot_password" eyebrow="找回密码" title="重置入口已预留" description="这个流程目前保留为可见入口，后续可接入真实短信或邮件找回。">
+          <StepShell step="forgot_password" eyebrow="找回密码" title="安全重置申请" description="先完成账号、验证码和新密码校验；当前本地环境会给出明确结果反馈，后续可直接接入短信或邮件服务。">
             <div className="space-y-5 rounded-[2.2rem] frost-card p-6">
-              <Field label="邮箱或手机号"><Input type="text" placeholder="输入账号" /></Field>
-              <Field label="验证码"><Input type="text" placeholder="输入验证码" /></Field>
-              <Field label="新密码"><Input type="password" placeholder="设置新密码" /></Field>
+              <Field label="邮箱或手机号"><Input type="text" placeholder="输入账号" value={resetData.account} onChange={(event) => setResetData({ ...resetData, account: event.target.value })} /></Field>
+              <Field label="验证码"><Input type="text" placeholder={`测试验证码 ${DEMO_ACCESS_CODE}`} value={resetData.code} onChange={(event) => setResetData({ ...resetData, code: event.target.value })} /></Field>
+              <Field label="新密码"><Input type="password" placeholder="设置新密码" value={resetData.password} onChange={(event) => setResetData({ ...resetData, password: event.target.value })} /></Field>
+              {resetFeedback && <div className="rounded-[1.4rem] border border-primary/10 bg-primary/5 px-4 py-3 text-xs font-bold leading-relaxed text-primary">{resetFeedback}</div>}
             </div>
-            <button type="button" onClick={() => changeStep('login')} className="w-full rounded-[1.8rem] bg-primary py-4 text-white font-black shadow-lg shadow-primary/20">返回登录</button>
+            <div className="space-y-3">
+              <button type="button" onClick={handlePasswordReset} className="w-full rounded-[1.8rem] bg-primary py-4 text-white font-black shadow-lg shadow-primary/20">提交重置申请</button>
+              <button type="button" onClick={() => changeStep('login')} className="w-full rounded-[1.8rem] bg-slate-100 py-4 font-black text-slate-500">返回登录</button>
+            </div>
           </StepShell>
         )}
 
@@ -486,8 +515,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               </div>
             </div>
             <div className="space-y-3">
-              <button type="button" onClick={handleRegister} disabled={isSubmitting || !petData.name || (petData.images?.length || 0) < 1} className={`w-full rounded-[1.8rem] py-4 font-black shadow-lg ${!isSubmitting && petData.name && (petData.images?.length || 0) >= 1 ? 'bg-primary text-white shadow-primary/20' : 'bg-slate-100 text-slate-300'}`}>{isSubmitting ? '正在创建账号…' : '完成建档并进入 App'}</button>
-              <p className="text-center text-xs font-bold text-slate-400">至少上传 1 张宠物照片，最多 4 张。</p>
+              <button type="button" onClick={handleRegister} disabled={isSubmitting || !petData.name || (petData.images?.length || 0) < 1} className={`w-full rounded-[1.8rem] py-4 font-black shadow-lg ${!isSubmitting && petData.name && (petData.images?.length || 0) >= 1 ? 'bg-primary text-white shadow-primary/20' : 'bg-slate-100 text-slate-300'}`}>{isSubmitting ? '正在创建账号并同步云端图片…' : '完成建档并进入 App'}</button>
+              <p className="text-center text-xs font-bold leading-relaxed text-slate-400">至少上传 1 张宠物照片，最多 4 张。提交后会同步到 Supabase Storage 并保存云端 URL。</p>
             </div>
           </StepShell>
         )}

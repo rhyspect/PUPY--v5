@@ -11,6 +11,7 @@ export interface User {
   mbti: string | null;
   signature: string | null;
   avatar_url: string | null;
+  photos?: string[];
   bio: string | null;
   is_verified: boolean;
   verification_token?: string | null;
@@ -239,6 +240,7 @@ export interface UpdateUserRequest {
   mbti?: string;
   signature?: string;
   avatar_url?: string;
+  photos?: string[];
   bio?: string;
 }
 

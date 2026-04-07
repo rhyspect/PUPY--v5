@@ -158,12 +158,21 @@ export class AuthService {
 
   static async updateUser(userId: string, updates: UpdateUserRequest): Promise<ApiResponse<SafeUser>> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', userId)
-        .select('*')
-        .limit(1);
+      const applyUpdate = (payload: UpdateUserRequest) =>
+        supabase
+          .from('users')
+          .update(payload)
+          .eq('id', userId)
+          .select('*')
+          .limit(1);
+
+      let { data, error } = await applyUpdate(updates);
+      if (error && updates.photos && error.message.includes('photos')) {
+        const { photos: _photos, ...compatibleUpdates } = updates;
+        const fallbackResult = await applyUpdate(compatibleUpdates);
+        data = fallbackResult.data;
+        error = fallbackResult.error;
+      }
 
       if (error || !data || data.length === 0) {
         throw error || new Error('未找到可更新的用户。');

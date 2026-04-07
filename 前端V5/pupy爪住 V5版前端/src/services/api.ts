@@ -156,6 +156,13 @@ export interface ApiMarketProduct {
   pet?: ApiPetRecord;
 }
 
+export interface ApiUploadAsset {
+  url: string;
+  path: string;
+  bucket: string;
+  contentType: string;
+}
+
 export interface ApiMatchRecord {
   id: string;
   user_a_id: string;
@@ -359,6 +366,18 @@ class ApiService {
     return this.request<ApiUser>('/api/auth/me', {
       method: 'PUT',
       body: JSON.stringify(updates),
+    });
+  }
+
+  async uploadImage(dataUrl: string, fileName: string, folder: 'owners' | 'pets' | 'diaries' | 'market' | 'uploads' = 'uploads', contentType?: string) {
+    return this.request<ApiUploadAsset>('/api/uploads/image', {
+      method: 'POST',
+      body: JSON.stringify({
+        dataUrl,
+        fileName,
+        folder,
+        contentType,
+      }),
     });
   }
 
@@ -647,7 +666,6 @@ class ApiService {
 
 export const apiService = new ApiService();
 export default apiService;
-
 
 
 

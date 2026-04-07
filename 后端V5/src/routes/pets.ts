@@ -2,6 +2,7 @@
 import type { CreatePetRequest } from '../types/index.js';
 import { AuthRequest, authMiddleware } from '../middleware/authMiddleware.js';
 import PetService from '../services/petService.js';
+import { uploadImageList } from '../services/uploadService.js';
 
 const router = Express.Router();
 
@@ -11,7 +12,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Express.Response)
       return res.status(401).json({ success: false, error: 'Unauthorized.', code: 401 });
     }
 
-    const petData = req.body as CreatePetRequest;
+    const petData = { ...(req.body as CreatePetRequest) };
+    petData.images = await uploadImageList(req.user.user_id, petData.images, 'pets');
     const result = await PetService.createPet(req.user.user_id, petData);
     res.status(result.success ? 201 : 400).json(result);
   } catch (error) {
@@ -75,7 +77,12 @@ router.put('/:petId', authMiddleware, async (req: AuthRequest, res: Express.Resp
       return res.status(401).json({ success: false, error: 'Unauthorized.', code: 401 });
     }
 
-    const result = await PetService.updatePet(req.user.user_id, req.params.petId, req.body);
+    const updates = { ...(req.body as Record<string, unknown>) };
+    if (Array.isArray(updates.images)) {
+      updates.images = await uploadImageList(req.user.user_id, updates.images.filter((image): image is string => typeof image === 'string'), 'pets');
+    }
+
+    const result = await PetService.updatePet(req.user.user_id, req.params.petId, updates);
     res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Update pet error:', error);

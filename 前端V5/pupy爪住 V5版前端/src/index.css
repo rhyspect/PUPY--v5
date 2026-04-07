@@ -66,6 +66,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply break-words;
+    text-wrap: balance;
   }
 
   button,
@@ -78,6 +79,40 @@
   button {
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    min-height: 2.75rem;
+    touch-action: manipulation;
+    transition:
+      transform 180ms ease,
+      box-shadow 220ms ease,
+      border-color 220ms ease,
+      background-color 220ms ease,
+      color 220ms ease,
+      opacity 220ms ease;
+  }
+
+  button:not(:disabled):active {
+    transform: scale(0.985);
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  input,
+  textarea,
+  select {
+    min-height: 2.75rem;
+    transition:
+      box-shadow 220ms ease,
+      border-color 220ms ease,
+      background-color 220ms ease,
+      transform 220ms ease;
+  }
+
+  input:hover,
+  textarea:hover,
+  select:hover {
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
   }
 
   button:focus-visible,
@@ -86,6 +121,15 @@
   select:focus-visible {
     outline: 2px solid rgba(23, 104, 77, 0.22);
     outline-offset: 2px;
+  }
+
+  p,
+  span,
+  label,
+  button,
+  input,
+  textarea {
+    overflow-wrap: anywhere;
   }
 
   ::selection {
@@ -130,6 +174,22 @@
   -webkit-backdrop-filter: blur(28px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.72);
   box-shadow: 0 24px 72px rgba(15, 23, 42, 0.14);
+}
+
+.frost-card,
+.glass,
+.soft-panel {
+  transition:
+    transform 240ms ease,
+    box-shadow 240ms ease,
+    border-color 240ms ease,
+    background-color 240ms ease;
+}
+
+.frost-card:hover,
+.glass:hover,
+.soft-panel:hover {
+  box-shadow: 0 28px 78px rgba(15, 23, 42, 0.16);
 }
 
 .soft-panel {
@@ -187,6 +247,19 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.text-flow-safe {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.6;
 }
 
 .section-enter {

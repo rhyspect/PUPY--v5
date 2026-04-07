@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   mbti VARCHAR(16),
   signature TEXT,
   avatar_url TEXT,
+  photos TEXT[] DEFAULT '{}',
   bio TEXT,
   is_verified BOOLEAN DEFAULT FALSE,
   verification_token VARCHAR(255),

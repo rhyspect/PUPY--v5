@@ -14,6 +14,8 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
   const [view, setView] = useState<'map' | 'realms' | 'courtyards'>('map');
   const [showModal, setShowModal] = useState<'create' | 'join' | null>(null);
   const [modalData, setModalData] = useState({ name: '', id: '', password: '' });
+  const [modalFeedback, setModalFeedback] = useState<string | null>(null);
+  const [mapFeedback, setMapFeedback] = useState('附近有 12 位宠物伙伴在线互动');
   const [cloudEntry, setCloudEntry] = useState<{ phrase: string; target: string } | null>(null);
   const phraseTimerRef = useRef<number | null>(null);
   const finishTimerRef = useRef<number | null>(null);
@@ -42,13 +44,27 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
   ]);
 
   const handleJoin = () => {
-    if (!modalData.id.trim() || !modalData.password.trim()) return;
+    if (!modalData.id.trim() || !modalData.password.trim()) {
+      setModalFeedback('请输入小院编号和进入密码。');
+      return;
+    }
+    const targetCourt = courtyards.find((court) => court.id === modalData.id.trim());
+    if (!targetCourt) {
+      setModalFeedback('没有找到这个小院编号，请检查后再试。');
+      return;
+    }
+    setCourtyards((prev) => prev.map((court) => court.id === targetCourt.id ? { ...court, members: court.members + 1 } : court));
+    setMapFeedback(`已加入 ${targetCourt.name}，可以开始小院交流。`);
     setShowModal(null);
     setModalData({ name: '', id: '', password: '' });
+    setModalFeedback(null);
   };
 
   const handleCreate = () => {
-    if (!modalData.name.trim() || !modalData.password.trim()) return;
+    if (!modalData.name.trim() || !modalData.password.trim()) {
+      setModalFeedback('请输入小院名称和进入密码。');
+      return;
+    }
     const newId = Math.floor(1000 + Math.random() * 9000).toString();
     setCourtyards((prev) => [
       {
@@ -60,8 +76,10 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
       },
       ...prev,
     ]);
+    setMapFeedback(`已创建 ${modalData.name.trim()}，小院编号 ${newId}。`);
     setShowModal(null);
     setModalData({ name: '', id: '', password: '' });
+    setModalFeedback(null);
   };
 
   const petName = userPet?.name || '小狗狗';
@@ -94,6 +112,16 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
       setCloudEntry(null);
       onSelectRealm();
     }, 3000);
+  };
+
+  const openCourtModal = (mode: 'create' | 'join') => {
+    setModalFeedback(null);
+    setShowModal(mode);
+  };
+
+  const refreshMap = () => {
+    const onlineCount = 8 + Math.floor(Math.random() * 10);
+    setMapFeedback(`地图已刷新，附近有 ${onlineCount} 位宠物伙伴在线互动`);
   };
 
   return (
@@ -169,9 +197,9 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary">near_me</span>
-                  <span className="text-xs font-black tracking-tight text-slate-900">附近有 12 位宠物伙伴在线互动</span>
+                  <span className="text-xs font-black leading-relaxed tracking-tight text-slate-900">{mapFeedback}</span>
                 </div>
-                <button type="button" className="text-[10px] font-black uppercase tracking-widest text-primary">
+                <button type="button" onClick={refreshMap} className="shrink-0 text-[10px] font-black uppercase tracking-widest text-primary">
                   刷新地图
                 </button>
               </div>
@@ -215,10 +243,10 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
         {view === 'courtyards' && (
           <motion.div key="courtyards" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
             <div className="flex gap-3">
-              <button type="button" onClick={() => setShowModal('create')} className="flex-1 rounded-[2.5rem] border-2 border-dashed border-primary/30 bg-primary/10 py-6 font-black text-primary transition hover:bg-primary/15">
+              <button type="button" onClick={() => openCourtModal('create')} className="flex-1 rounded-[2.5rem] border-2 border-dashed border-primary/30 bg-primary/10 py-6 font-black text-primary transition hover:bg-primary/15">
                 创建小院
               </button>
-              <button type="button" onClick={() => setShowModal('join')} className="flex-1 rounded-[2.5rem] border-2 border-dashed border-slate-200 bg-slate-100 py-6 font-black text-slate-500 transition hover:bg-slate-200">
+              <button type="button" onClick={() => openCourtModal('join')} className="flex-1 rounded-[2.5rem] border-2 border-dashed border-slate-200 bg-slate-100 py-6 font-black text-slate-500 transition hover:bg-slate-200">
                 加入小院
               </button>
             </div>
@@ -235,7 +263,7 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
                       <span className="text-[9px] font-bold text-slate-300">ID: {court.id}</span>
                     </div>
                   </div>
-                  <button type="button" onClick={() => setShowModal('join')} className="rounded-full bg-slate-900 px-4 py-2 text-[10px] font-black text-white transition hover:bg-primary">
+                  <button type="button" onClick={() => { setModalData((prev) => ({ ...prev, id: court.id })); openCourtModal('join'); }} className="rounded-full bg-slate-900 px-4 py-2 text-[10px] font-black text-white transition hover:bg-primary">
                     加入
                   </button>
                 </div>
@@ -328,8 +356,18 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
                 </label>
               </div>
 
+              {modalFeedback && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-bold leading-relaxed text-amber-700"
+                >
+                  {modalFeedback}
+                </motion.div>
+              )}
+
               <div className="mt-6 flex gap-3">
-                <button type="button" onClick={() => setShowModal(null)} className="flex-1 rounded-2xl bg-slate-100 py-4 font-black text-slate-500">
+                <button type="button" onClick={() => { setShowModal(null); setModalFeedback(null); }} className="flex-1 rounded-2xl bg-slate-100 py-4 font-black text-slate-500">
                   取消
                 </button>
                 <button type="button" onClick={showModal === 'create' ? handleCreate : handleJoin} className="flex-1 rounded-2xl bg-primary py-4 font-black text-white shadow-lg shadow-primary/20">

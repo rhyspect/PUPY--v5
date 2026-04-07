@@ -1,23 +1,89 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
+import { addMarketCartItem, createMarketOrder, formatAssetPrice } from '../utils/marketAssets';
 
 interface ProductDetailProps {
   onBack: () => void;
 }
 
 export default function ProductDetail({ onBack }: ProductDetailProps) {
+  const product = {
+    id: 'cloudcomfort-bed',
+    title: 'CloudComfort™ 云感毛绒甜甜圈宠物床',
+    image: 'https://images.unsplash.com/photo-1591160674255-fc809b1edaa1?auto=format&fit=crop&q=80&w=600',
+    price: 299,
+    sellerName: 'PUPY 官方自营',
+  };
+  const sizes = ['S (小型犬/猫)', 'M (中型犬)', 'L (大型犬)'];
+  const [selectedSize, setSelectedSize] = useState(sizes[1]);
+  const [quantity, setQuantity] = useState(1);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [feedback, setFeedback] = useState('已默认选择 M 号规格，可直接加入购物车。');
+
+  const handleShare = async () => {
+    const shareText = `${product.title} - ${formatAssetPrice(product.price)}，来自 PUPY 爪住集市。`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: product.title, text: shareText, url: window.location.href });
+        setFeedback('分享面板已打开。');
+        return;
+      }
+      await navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
+      setFeedback('商品链接已复制，可以发给朋友啦。');
+    } catch {
+      setFeedback('分享暂未完成，你可以稍后再试。');
+    }
+  };
+
+  const handleAddToCart = () => {
+    addMarketCartItem({
+      productId: `${product.id}-${selectedSize}`,
+      title: `${product.title} · ${selectedSize}`,
+      image: product.image,
+      unitPrice: product.price,
+      quantity,
+      sellerName: product.sellerName,
+      category: '主粮用品',
+      type: 'toy',
+      addedAt: new Date().toISOString(),
+    });
+    setFeedback(`已加入购物车：${selectedSize} × ${quantity}。可在会员资产中查看。`);
+  };
+
+  const handleBuyNow = () => {
+    createMarketOrder({
+      kind: 'shopping',
+      title: product.title,
+      image: product.image,
+      sellerName: product.sellerName,
+      status: '待支付',
+      total: product.price * quantity,
+      quantity,
+      note: `规格：${selectedSize}`,
+      items: [{
+        productId: `${product.id}-${selectedSize}`,
+        title: `${product.title} · ${selectedSize}`,
+        image: product.image,
+        unitPrice: product.price,
+        quantity,
+      }],
+    });
+    setFeedback(`订单已生成：${selectedSize} × ${quantity}，可在会员资产继续结算。`);
+  };
+
   return (
     <div className="fixed inset-0 z-[150] bg-white flex flex-col max-w-md mx-auto overflow-y-auto no-scrollbar">
       {/* Header */}
       <header className="sticky top-0 z-50 flex justify-between items-center px-6 py-4 bg-white/80 backdrop-blur-md">
-        <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+        <button type="button" onClick={onBack} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <div className="flex gap-2">
-          <button className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+          <button type="button" onClick={() => void handleShare()} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600" aria-label="分享商品">
             <span className="material-symbols-outlined">share</span>
           </button>
-          <button className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
-            <span className="material-symbols-outlined">favorite</span>
+          <button type="button" onClick={() => { setIsFavorite((value) => !value); setFeedback(isFavorite ? '已取消收藏。' : '已收藏商品，当前页面会保留收藏状态。'); }} className={`w-10 h-10 rounded-full flex items-center justify-center ${isFavorite ? 'bg-rose-50 text-rose-500' : 'bg-slate-100 text-slate-600'}`} aria-label="收藏商品">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
           </button>
         </div>
       </header>
@@ -26,8 +92,8 @@ export default function ProductDetail({ onBack }: ProductDetailProps) {
       <div className="px-6">
         <div className="aspect-square rounded-[3rem] overflow-hidden shadow-2xl bg-slate-50">
           <img 
-            src="https://images.unsplash.com/photo-1591160674255-fc809b1edaa1?auto=format&fit=crop&q=80&w=600" 
-            alt="CloudComfort™ Plush Donut Bed" 
+            src={product.image}
+            alt={product.title}
             className="w-full h-full object-cover"
           />
         </div>
@@ -66,16 +132,39 @@ export default function ProductDetail({ onBack }: ProductDetailProps) {
         <div className="space-y-4">
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">选择规格</h3>
           <div className="flex flex-wrap gap-3">
-            {['S (小型犬/猫)', 'M (中型犬)', 'L (大型犬)'].map((size, i) => (
+            {sizes.map((size) => (
               <button 
-                key={i}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold border-2 transition-all ${i === 1 ? 'border-emerald-500 bg-emerald-50 text-emerald-600' : 'border-slate-100 text-slate-400'}`}
+                key={size}
+                type="button"
+                onClick={() => { setSelectedSize(size); setFeedback(`已选择规格：${size}。`); }}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold border-2 transition-all ${selectedSize === size ? 'border-emerald-500 bg-emerald-50 text-emerald-600' : 'border-slate-100 text-slate-400'}`}
               >
                 {size}
               </button>
             ))}
           </div>
         </div>
+
+        <div className="flex items-center justify-between rounded-3xl bg-emerald-50/70 p-4 text-emerald-700">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest">选购数量</p>
+            <p className="mt-1 text-xs font-bold">将同步到会员资产与订单记录</p>
+          </div>
+          <div className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm">
+            <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500" aria-label="减少数量">-</button>
+            <span className="min-w-6 text-center text-sm font-black text-slate-900">{quantity}</span>
+            <button type="button" onClick={() => setQuantity((value) => value + 1)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white" aria-label="增加数量">+</button>
+          </div>
+        </div>
+
+        <motion.div
+          key={feedback}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-[1.6rem] border border-emerald-100 bg-emerald-50 px-5 py-4 text-xs font-bold leading-relaxed text-emerald-700"
+        >
+          {feedback}
+        </motion.div>
 
         <div className="space-y-4">
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">产品详情</h3>
@@ -99,10 +188,10 @@ export default function ProductDetail({ onBack }: ProductDetailProps) {
 
       {/* Bottom Action Bar */}
       <div className="sticky bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-slate-100 flex gap-4">
-        <button className="w-16 h-16 rounded-[2rem] bg-slate-100 flex items-center justify-center text-slate-600 active:scale-95 transition-transform">
+        <button type="button" onClick={handleAddToCart} className="w-16 h-16 rounded-[2rem] bg-slate-100 flex items-center justify-center text-slate-600 active:scale-95 transition-transform" aria-label="加入购物车">
           <span className="material-symbols-outlined">shopping_cart</span>
         </button>
-        <button className="flex-1 h-16 rounded-[2rem] bg-emerald-500 text-white font-black text-lg shadow-xl shadow-emerald-200 active:scale-95 transition-transform">
+        <button type="button" onClick={handleBuyNow} className="flex-1 h-16 rounded-[2rem] bg-emerald-500 text-white font-black text-lg shadow-xl shadow-emerald-200 active:scale-95 transition-transform">
           立即购买
         </button>
       </div>
