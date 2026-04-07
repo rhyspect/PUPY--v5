@@ -13,6 +13,14 @@ import type {
 import apiService from '../services/api';
 import type { Pet } from '../types';
 import { createOwnerFromApi, createPetFromApi } from '../utils/adapters';
+import {
+  MARKET_ASSET_EVENT,
+  formatAssetPrice,
+  loadMarketCart,
+  loadMarketOrders,
+  type MarketCartItem,
+  type MarketOrder,
+} from '../utils/marketAssets';
 
 interface ProfileProps {
   userPet: Pet;
@@ -85,6 +93,8 @@ export default function Profile({
   const [sellerProducts, setSellerProducts] = useState<ApiMarketProduct[]>([]);
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [prayers, setPrayers] = useState<ApiPrayerRecord[]>([]);
+  const [cartItems, setCartItems] = useState<MarketCartItem[]>(() => loadMarketCart());
+  const [marketOrders, setMarketOrders] = useState<MarketOrder[]>(() => loadMarketOrders());
   const [prayerInput, setPrayerInput] = useState('');
   const [editForm, setEditForm] = useState<EditFormState>({
     username: currentUser?.username || userPet.owner.name,
@@ -148,6 +158,21 @@ export default function Profile({
     void loadData();
   }, [currentUser?.id, userPet.id]);
 
+  useEffect(() => {
+    const refreshMarketAssets = () => {
+      setCartItems(loadMarketCart());
+      setMarketOrders(loadMarketOrders());
+    };
+
+    refreshMarketAssets();
+    window.addEventListener('storage', refreshMarketAssets);
+    window.addEventListener(MARKET_ASSET_EVENT, refreshMarketAssets);
+    return () => {
+      window.removeEventListener('storage', refreshMarketAssets);
+      window.removeEventListener(MARKET_ASSET_EVENT, refreshMarketAssets);
+    };
+  }, []);
+
   const owner = useMemo(() => createOwnerFromApi(profileUser || currentUser || {}), [profileUser, currentUser]);
   const sourceUser = profileUser || currentUser;
   const profilePet = useMemo(() => {
@@ -165,6 +190,8 @@ export default function Profile({
   );
   const unreadNotifications = notifications.filter((item) => !item.is_read).length;
   const twinReady = Boolean(petRecord?.is_digital_twin || isDigitalTwinCreated);
+  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotal = cartItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
   const saveProfile = async () => {
     if (!currentUser?.id || !petRecord?.id || saving) return;
@@ -625,20 +652,97 @@ export default function Profile({
             exit={{ opacity: 0, y: -16 }}
             className="space-y-8"
           >
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-5 shadow-sm">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">未读通知</p>
                 <p className="mt-2 text-2xl font-black text-slate-900">{unreadNotifications}</p>
               </div>
               <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-5 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">购物车商品</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">{cartItemCount}</p>
+              </div>
+              <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-5 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">订单记录</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">{marketOrders.length}</p>
+              </div>
+              <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-5 shadow-sm">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">发布资产</p>
                 <p className="mt-2 text-2xl font-black text-slate-900">{sellerProducts.length}</p>
               </div>
-              <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-5 shadow-sm">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">祈愿档案</p>
-                <p className="mt-2 text-2xl font-black text-slate-900">{prayers.length}</p>
-              </div>
             </div>
+
+            <section className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">我的加购商品</h3>
+                <span className="text-[10px] font-bold text-slate-400">合计 {formatAssetPrice(cartTotal)}</span>
+              </div>
+              {cartItems.length === 0 ? (
+                <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-6 shadow-sm text-sm text-slate-400 text-center">
+                  还没有加购商品。去爪住集市的主粮用品页选择数量并加入购物车后，会同步显示在这里。
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {cartItems.map((item) => (
+                    <div key={item.productId} className="glass ambient-card rounded-[2.5rem] border border-white/50 shadow-sm p-5 flex items-center gap-4">
+                      <img
+                        src={item.image || EMPTY_IMAGE}
+                        alt={item.title}
+                        className="w-16 h-16 rounded-2xl object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-slate-900 truncate">{item.title}</p>
+                        <p className="text-xs text-slate-500 truncate mt-1">{item.sellerName} · {formatAssetPrice(item.unitPrice)}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-2">已加购 {item.quantity} 件</p>
+                      </div>
+                      <span className="text-sm font-black text-primary whitespace-nowrap">
+                        {formatAssetPrice(item.unitPrice * item.quantity)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">订单与预约记录</h3>
+                <span className="text-[10px] font-bold text-slate-400">购物结算 / 商家预约</span>
+              </div>
+              {marketOrders.length === 0 ? (
+                <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-6 shadow-sm text-sm text-slate-400 text-center">
+                  还没有订单记录。主粮用品结算和护理养护预约会沉淀到这里。
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {marketOrders.map((order) => (
+                    <div key={order.id} className="glass ambient-card rounded-[2.5rem] border border-white/50 shadow-sm p-5 flex items-center gap-4">
+                      <img
+                        src={order.image || EMPTY_IMAGE}
+                        alt={order.title}
+                        className="w-16 h-16 rounded-2xl object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`rounded-full px-2 py-1 text-[9px] font-black ${order.kind === 'booking' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                            {order.kind === 'booking' ? '预约' : '订单'}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400">{formatTimestamp(order.createdAt)}</span>
+                        </div>
+                        <p className="text-sm font-black text-slate-900 truncate mt-2">{order.title}</p>
+                        <p className="text-xs text-slate-500 truncate mt-1">
+                          {order.kind === 'booking' ? `${order.appointmentSlot || '待确认时间'} · ${order.sellerName}` : `${order.quantity} 件 · ${order.status}`}
+                        </p>
+                      </div>
+                      <span className="text-sm font-black text-primary whitespace-nowrap">
+                        {formatAssetPrice(order.total)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
 
             <section className="space-y-3">
               <div className="flex items-center justify-between px-1">
@@ -844,4 +948,3 @@ export default function Profile({
     </div>
   );
 }
-

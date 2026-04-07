@@ -23,10 +23,6 @@ const copyByLocale = {
     emptyTitle: '暂无新推荐',
     emptyDescription: '当前附近还没有更合适的档案。',
     retry: '重新探索',
-    rulesTitle: '发现规则',
-    rulesBody: '左滑喜欢，右滑略过。',
-    identityTitle: '当前身份',
-    filters: '筛选偏好',
     likeBadge: '待匹配',
     dislikeBadge: '略过',
     ownerProfile: '查看主人资料',
@@ -46,10 +42,6 @@ const copyByLocale = {
     emptyTitle: 'No new recommendations right now',
     emptyDescription: 'There are no stronger candidates nearby at the moment. Check back later.',
     retry: 'Refresh discovery',
-    rulesTitle: 'Discovery rules',
-    rulesBody: 'Swipe left to like and enter pending matching. The system will not show a direct match instantly. Swipe right to skip with no heart or match.',
-    identityTitle: 'Current identity',
-    filters: 'Filters',
     likeBadge: 'Pending',
     dislikeBadge: 'Skip',
     ownerProfile: 'View owner profile',
@@ -265,18 +257,6 @@ export default function Home({ onMatch, onViewOwner, currentUser, userPet }: Hom
 
   return (
     <div className="relative flex min-h-[76vh] flex-col items-center px-6">
-      <div className="mb-5 grid w-full grid-cols-2 gap-3" aria-live="polite">
-        <div className="glass rounded-[2rem] border border-white/50 px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{copy.rulesTitle}</p>
-          <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-700">{copy.rulesBody}</p>
-        </div>
-        <div className="glass rounded-[2rem] border border-white/50 px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{copy.identityTitle}</p>
-          <p className="mt-2 text-sm font-semibold text-slate-700">{currentUser?.username || userPet.owner.name} · {userPet.name}</p>
-          <p className="mt-1 text-xs text-slate-400">{copy.filters}: {userPet.type} / {userPet.gender}</p>
-        </div>
-      </div>
-
       {error && (
         <div className="mb-4 w-full rounded-[1.6rem] border border-amber-100 bg-amber-50/90 px-4 py-3 text-sm font-semibold text-amber-700">
           {error}

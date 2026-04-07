@@ -2,10 +2,12 @@
 import { AnimatePresence, motion } from 'motion/react';
 import type { ApiMarketProduct } from '../services/api';
 import apiService from '../services/api';
+import type { Owner } from '../types';
+import { createOwnerFromApi } from '../utils/adapters';
 
 interface BreedingProps {
   onBack: () => void;
-  onChat: (ownerName: string) => void;
+  onChat: (owner: Owner) => void;
 }
 
 type BreedingListing = {
@@ -15,6 +17,7 @@ type BreedingListing = {
   petType: string;
   petGender: string;
   ownerName: string;
+  owner: Owner;
   ownerId?: string;
   petId?: string | null;
   image: string;
@@ -22,6 +25,12 @@ type BreedingListing = {
   priceLabel: string;
   requirements: string;
   status: string;
+};
+
+type ActionFeedback = {
+  tone: 'success' | 'warning' | 'error';
+  title: string;
+  body: string;
 };
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&q=80&w=800';
@@ -39,13 +48,16 @@ function getStoredPetId() {
 }
 
 function toListing(item: ApiMarketProduct): BreedingListing {
+  const owner = createOwnerFromApi(item.seller || {});
+
   return {
     id: item.id,
     title: item.title,
     petName: item.pet?.name || '宠物档案',
     petType: item.pet?.type || item.pet?.breed || '未填写品种',
     petGender: item.pet?.gender || '未填写性别',
-    ownerName: item.seller?.username || '发布者',
+    ownerName: owner.name,
+    owner,
     ownerId: item.seller?.id,
     petId: item.pet?.id || item.pet_id,
     image: item.images?.[0] || item.pet?.images?.[0] || FALLBACK_IMAGE,
@@ -62,6 +74,7 @@ export default function Breeding({ onBack, onChat }: BreedingProps) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<ActionFeedback | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const petId = getStoredPetId();
 
@@ -83,18 +96,46 @@ export default function Breeding({ onBack, onChat }: BreedingProps) {
     void loadListings();
   }, []);
 
+  useEffect(() => {
+    setFeedback(null);
+  }, [selected?.id]);
+
   const submitRequest = async () => {
-    if (!selected?.ownerId || !selected.petId || !petId || submitting) return;
+    if (!selected || submitting) return;
+    if (!selected.ownerId || !selected.petId || !petId) {
+      setFeedback({
+        tone: 'warning',
+        title: '申请资料暂不完整',
+        body: '这条繁育档案缺少真实主人或宠物 ID，请先私讯沟通，或刷新后再试。',
+      });
+      return;
+    }
+
     setSubmitting(true);
+    setFeedback(null);
     try {
       await apiService.createBreedingRequest(selected.ownerId, petId, selected.petId, '来自繁育配对页的申请');
-      setSelected(null);
+      setFeedback({
+        tone: 'success',
+        title: '繁育申请已发送',
+        body: '申请已进入对方待处理列表。你可以继续通过私讯沟通健康记录、见面时间和后续照护责任。',
+      });
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : '发送繁育申请失败');
+      setFeedback({
+        tone: 'error',
+        title: '发送繁育申请失败',
+        body: requestError instanceof Error ? requestError.message : '发送繁育申请失败，请稍后重试。',
+      });
     } finally {
       setSubmitting(false);
     }
   };
+
+  const feedbackToneClass = feedback?.tone === 'error'
+    ? 'border-red-100 bg-red-50 text-red-600'
+    : feedback?.tone === 'warning'
+      ? 'border-amber-100 bg-amber-50 text-amber-700'
+      : 'border-emerald-100 bg-emerald-50 text-emerald-700';
 
   return (
     <div className="fixed inset-0 z-[150] mx-auto flex max-w-md flex-col overflow-y-auto bg-surface no-scrollbar">
@@ -182,7 +223,7 @@ export default function Breeding({ onBack, onChat }: BreedingProps) {
                   </div>
                   <p className="line-clamp-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
                   <div className="flex gap-3">
-                    <button type="button" onClick={() => onChat(item.ownerName)} className="flex-1 rounded-[1.6rem] bg-white/80 py-3 text-sm font-black text-slate-600">
+                    <button type="button" onClick={() => onChat(item.owner)} className="flex-1 rounded-[1.6rem] bg-white/80 py-3 text-sm font-black text-slate-600">
                       私信沟通
                     </button>
                     <button type="button" onClick={() => setSelected(item)} className="flex-1 rounded-[1.6rem] bg-primary py-3 text-sm font-black text-white shadow-lg shadow-primary/20">
@@ -269,14 +310,21 @@ export default function Breeding({ onBack, onChat }: BreedingProps) {
                   <p className="mt-2 text-sm leading-relaxed text-slate-600">{selected.requirements}</p>
                 </div>
 
+                {feedback && (
+                  <div className={`rounded-[1.8rem] border px-5 py-4 text-sm font-semibold leading-relaxed ${feedbackToneClass}`} role="status">
+                    <p className="font-black">{feedback.title}</p>
+                    <p className="mt-1">{feedback.body}</p>
+                  </div>
+                )}
+
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => onChat(selected.ownerName)} className="flex-1 rounded-[1.6rem] bg-white/80 py-4 font-black text-slate-600">
+                  <button type="button" onClick={() => onChat(selected.owner)} className="flex-1 rounded-[1.6rem] bg-white/80 py-4 font-black text-slate-600">
                     先私信
                   </button>
                   <button
                     type="button"
                     onClick={() => void submitRequest()}
-                    disabled={submitting || !petId || !selected.ownerId || !selected.petId}
+                    disabled={submitting}
                     className="flex-1 rounded-[1.6rem] bg-primary py-4 font-black text-white shadow-lg shadow-primary/20 disabled:opacity-60"
                   >
                     {submitting ? '发送中…' : '发送申请'}

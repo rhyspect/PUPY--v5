@@ -42,21 +42,6 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS ?? 'rhyssvv@gmail.com')
 const DEFAULT_OWNER_AVATAR =
   'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=400';
 
-function createFallbackOwner(ownerName: string): Owner {
-  return {
-    name: ownerName,
-    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(ownerName)}`,
-    photos: [`https://picsum.photos/seed/${encodeURIComponent(ownerName)}/400/600`],
-    gender: '其他',
-    age: 25,
-    residentCity: '上海',
-    frequentCities: ['上海'],
-    hobbies: ['宠物', '社交'],
-    mbti: 'INTJ',
-    signature: '期待认识更多养宠人。',
-  };
-}
-
 function ScreenFallback({ label }: { label: string }) {
   return (
     <div className="px-6 py-10">
@@ -355,7 +340,7 @@ export default function App() {
             {currentScreen === 'profile' && <Profile userPet={userPet} currentUser={currentUser} isDigitalTwinCreated={isDigitalTwinCreated} onStartCreation={() => openScreen('creation')} onTwinCreated={() => setIsDigitalTwinCreated(true)} onProfileSync={handleProfileSync} />}
             {currentScreen === 'creation' && <Creation onComplete={() => { setIsDigitalTwinCreated(true); openScreen('profile'); }} />}
             {currentScreen === 'chat' && <Chat owner={activeChatOwner} currentUser={currentUser} userPet={userPet} chatRoomId={activeChatRoomId} onBack={() => openScreen('messages')} />}
-            {currentScreen === 'breeding' && <Breeding onBack={() => openScreen('home')} onChat={(ownerName) => { setActiveChatOwner(createFallbackOwner(ownerName)); setActiveChatRoomId(null); openScreen('chat'); }} />}
+            {currentScreen === 'breeding' && <Breeding onBack={() => openScreen('home')} onChat={(owner) => { setActiveChatOwner(owner); setActiveChatRoomId(null); openScreen('chat'); }} />}
             {currentScreen === 'diary' && <Diary onBack={() => openScreen('home')} />}
             {currentScreen === 'prayer' && <AIPrayer onBack={() => openScreen('home')} />}
             {currentScreen === 'settings' && <Settings userPet={{ name: userPet.name, image: userPet.images?.[0], hasPet: userPet.hasPet }} currentUserEmail={currentUser?.email || null} onBack={() => openScreen('home')} onReset={handleReset} onOpenAdmin={openAdminScreen} onLocaleChange={handleLocaleChange} locale={locale} backendStatus={backendStatus} canOpenAdmin={canAccessAdmin} />}
@@ -460,8 +445,6 @@ export default function App() {
     </div>
   );
 }
-
-
 
 
 
