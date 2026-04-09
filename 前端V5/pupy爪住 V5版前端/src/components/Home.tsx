@@ -28,9 +28,12 @@ const copyByLocale = {
     dislikeBadge: '略过',
     ownerProfile: '查看主人资料',
     detailProfile: '查看详细资料',
+    detailAction: '资料',
     pendingHint: '等待系统双向确认',
     likeAria: '喜欢当前卡片',
     dislikeAria: '跳过当前卡片',
+    likeAction: '喜欢配对',
+    dislikeAction: '先看看别的',
     sendLikeFailed: '发送喜欢失败，请稍后重试。',
     discoverFailed: '发现页加载失败。',
     typeFallback: '宠物伙伴',
@@ -47,9 +50,12 @@ const copyByLocale = {
     dislikeBadge: 'Skip',
     ownerProfile: 'View owner profile',
     detailProfile: 'View full profile',
+    detailAction: 'Profile',
     pendingHint: 'Real profile waiting for two-way system confirmation',
     likeAria: 'Like current card',
     dislikeAria: 'Skip current card',
+    likeAction: 'Like',
+    dislikeAction: 'Skip',
     sendLikeFailed: 'Failed to send like. Please try again.',
     discoverFailed: 'Failed to load discovery.',
     typeFallback: 'Pet companion',
@@ -259,7 +265,7 @@ export default function Home({ onMatch, onViewOwner, currentUser, userPet }: Hom
   return (
     <div className="relative flex min-h-[76vh] flex-col items-center px-6">
       {error && (
-        <div className="mb-4 w-full rounded-[1.6rem] border border-amber-100 bg-amber-50/90 px-4 py-3 text-sm font-semibold text-amber-700">
+        <div className="brand-inline-notice mb-4 w-full rounded-[1.6rem] px-4 py-3 text-sm font-semibold text-amber-700">
           {error}
         </div>
       )}
@@ -322,8 +328,9 @@ export default function Home({ onMatch, onViewOwner, currentUser, userPet }: Hom
                     </div>
                   </button>
 
-                  <button type="button" onClick={() => onViewOwner(pet.owner)} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20 transition-transform active:scale-90" aria-label={`${copy.detailProfile}: ${pet.owner.name}`}>
+                  <button type="button" onClick={() => onViewOwner(pet.owner)} className="brand-action-primary flex h-10 items-center justify-center gap-1.5 rounded-2xl px-3 text-white transition-transform active:scale-90" aria-label={`${copy.detailProfile}: ${pet.owner.name}`}>
                     <span className="material-symbols-outlined text-xl">visibility</span>
+                    <span className="text-[10px] font-black">{copy.detailAction}</span>
                   </button>
                 </div>
 
@@ -347,25 +354,31 @@ export default function Home({ onMatch, onViewOwner, currentUser, userPet }: Hom
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center justify-center gap-8 pb-6">
-        <button
-          type="button"
-          onClick={() => void swipe('like')}
-          disabled={isSubmitting || !topCard}
-          aria-label={topCard ? `${copy.likeAria}: ${topCard.name}` : copy.likeAria}
-          className="flex h-20 w-20 items-center justify-center rounded-[2.2rem] bg-primary text-white shadow-2xl shadow-primary/30 transition-all hover:scale-105 hover:shadow-primary/40 active:scale-90 disabled:opacity-60"
-        >
-          <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => void swipe('dislike')}
-          disabled={!topCard}
-          aria-label={topCard ? `${copy.dislikeAria}: ${topCard.name}` : copy.dislikeAria}
-          className="flex h-16 w-16 items-center justify-center rounded-[2rem] border border-slate-100 bg-white text-red-400 shadow-xl transition-all hover:scale-105 hover:bg-red-50 active:scale-90 disabled:opacity-60"
-        >
-          <span className="material-symbols-outlined text-3xl">close</span>
-        </button>
+      <div className="flex items-start justify-center gap-8 pb-6">
+        <div className="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void swipe('like')}
+            disabled={isSubmitting || !topCard}
+            aria-label={topCard ? `${copy.likeAria}: ${topCard.name}` : copy.likeAria}
+            className="brand-action-primary flex h-20 w-20 items-center justify-center rounded-[2.2rem] transition-all hover:scale-105 active:scale-90 disabled:opacity-60"
+          >
+            <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+          </button>
+          <span className="text-[11px] font-black tracking-wide text-primary/80">{copy.likeAction}</span>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void swipe('dislike')}
+            disabled={!topCard}
+            aria-label={topCard ? `${copy.dislikeAria}: ${topCard.name}` : copy.dislikeAria}
+            className="brand-action-secondary flex h-16 w-16 items-center justify-center rounded-[2rem] text-red-400 transition-all hover:scale-105 active:scale-90 disabled:opacity-60"
+          >
+            <span className="material-symbols-outlined text-3xl">close</span>
+          </button>
+          <span className="text-[11px] font-black tracking-wide text-slate-400">{copy.dislikeAction}</span>
+        </div>
       </div>
     </div>
   );

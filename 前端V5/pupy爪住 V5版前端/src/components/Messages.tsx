@@ -44,6 +44,7 @@ const copyByLocale = {
     waitingStatus: '正在等待系统撮合',
     viewOwner: '查看主人资料',
     viewOwnerDetails: '查看详细资料',
+    detailAction: '资料',
     otherPetFallback: '对方宠物',
     otherPetTypeFallback: '宠物档案',
     roomsSection: '真实聊天',
@@ -62,6 +63,9 @@ const copyByLocale = {
     unread: '未读',
     synced: '已同步',
     openNotification: '打开系统通知并标记已读',
+    sendLabel: '发送',
+    viewSession: '查看会话',
+    markRead: '标记已读',
   },
   'en-US': {
     justNow: 'Just now',
@@ -85,6 +89,7 @@ const copyByLocale = {
     waitingStatus: 'Waiting for a two-way confirmation',
     viewOwner: 'View owner profile',
     viewOwnerDetails: 'View detailed profile',
+    detailAction: 'Profile',
     otherPetFallback: 'Other pet',
     otherPetTypeFallback: 'Pet profile',
     roomsSection: 'Real chats',
@@ -103,6 +108,9 @@ const copyByLocale = {
     unread: 'Unread',
     synced: 'Synced',
     openNotification: 'Open this notification and mark it as read',
+    sendLabel: 'Send',
+    viewSession: 'Open chat',
+    markRead: 'Mark read',
   },
 } satisfies Record<AppLocale, Record<string, string>>;
 
@@ -307,18 +315,20 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
   return (
     <div className="flex h-full flex-col">
       <div className="px-6 pb-6">
-        <div className="glass rounded-[2.3rem] border border-white/50 p-4 shadow-sm">
+        <div className="brand-panel-shell rounded-[2.3rem] p-4 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-primary/70">{copy.centerTag}</p>
+              <p className="brand-section-kicker text-[11px] font-black uppercase">{copy.centerTag}</p>
               <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900">{copy.title}</h2>
             </div>
             <button
               type="button"
               onClick={() => void loadData()}
-              className="rounded-2xl bg-white/80 px-4 py-3 text-xs font-black text-primary shadow-sm"
+              disabled={loading}
+              className="brand-action-secondary flex items-center gap-2 rounded-2xl px-4 py-3 text-xs font-black text-primary shadow-sm disabled:opacity-60"
               aria-label={copy.refreshAria}
             >
+              <span className="material-symbols-outlined text-[16px]">refresh</span>
               {copy.refresh}
             </button>
           </div>
@@ -327,7 +337,7 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
       </div>
 
       <div className="mb-6 flex px-6">
-        <div className="glass flex w-full rounded-2xl border border-white/50 p-1" role="tablist" aria-label={copy.tabsLabel}>
+        <div className="brand-segment-shell flex w-full rounded-2xl p-1" role="tablist" aria-label={copy.tabsLabel}>
           <button
             type="button"
             role="tab"
@@ -335,7 +345,7 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
             aria-controls="messages-owner-panel"
             id="messages-owner-tab"
             onClick={() => setActiveTab('owner')}
-            className={`flex-1 rounded-xl py-2.5 text-xs font-bold transition-all ${activeTab === 'owner' ? 'bg-white text-primary shadow-sm' : 'text-slate-500'}`}
+            className={`flex-1 rounded-xl py-2.5 text-xs font-bold transition-all ${activeTab === 'owner' ? 'brand-segment-active' : 'brand-segment-idle'}`}
           >
             {copy.ownerTab}
           </button>
@@ -346,7 +356,7 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
             aria-controls="messages-pet-panel"
             id="messages-pet-tab"
             onClick={() => setActiveTab('pet')}
-            className={`flex-1 rounded-xl py-2.5 text-xs font-bold transition-all ${activeTab === 'pet' ? 'bg-white text-primary shadow-sm' : 'text-slate-500'}`}
+            className={`flex-1 rounded-xl py-2.5 text-xs font-bold transition-all ${activeTab === 'pet' ? 'brand-segment-active' : 'brand-segment-idle'}`}
           >
             {copy.petTab}
           </button>
@@ -355,7 +365,7 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
 
       <div className="flex-1 overflow-y-auto px-6 pb-20 no-scrollbar">
         {error && (
-          <div className="mb-4 rounded-[1.6rem] border border-amber-100 bg-amber-50/90 px-4 py-3 text-sm font-semibold text-amber-700" role="alert">
+          <div className="brand-inline-notice mb-4 rounded-[1.6rem] px-4 py-3 text-sm font-semibold text-amber-700" role="alert">
             {error}
           </div>
         )}
@@ -378,7 +388,7 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
                   { label: copy.pendingCount, value: pendingMatches.length },
                   { label: copy.roomsCount, value: ownerSessions.length },
                 ].map((item) => (
-                  <div key={item.label} className="glass rounded-[2rem] border border-white/50 p-4 shadow-sm">
+                  <div key={item.label} className="brand-metric-card rounded-[2rem] p-4">
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{item.label}</p>
                     <p className="mt-2 text-2xl font-black text-slate-900">{item.value}</p>
                   </div>
@@ -399,7 +409,7 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
                       const compatibility = Number(match.compatibility_score || 0);
 
                       return (
-                        <div key={match.id} className="flex items-center gap-4 rounded-[2rem] border border-amber-100 bg-amber-50/95 p-4">
+                        <div key={match.id} className="brand-list-row flex items-center gap-4 rounded-[2rem] p-4">
                           <button
                             type="button"
                             onClick={() => onViewOwner(owner)}
@@ -422,10 +432,11 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
                           <button
                             type="button"
                             onClick={() => onViewOwner(owner)}
-                            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-amber-600 shadow-sm"
+                            className="brand-action-secondary flex h-10 items-center justify-center gap-1.5 rounded-2xl px-3 text-amber-600 shadow-sm"
                             aria-label={`${copy.viewOwnerDetails}: ${owner.name}`}
                           >
                             <span className="material-symbols-outlined text-lg">visibility</span>
+                            <span className="text-[10px] font-black">{copy.detailAction}</span>
                           </button>
                         </div>
                       );
@@ -453,7 +464,7 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
                         type="button"
                         key={session.id}
                         onClick={() => onSelectChat({ owner, runtimeSessionId: session.id, runtimeSessionType: 'owner' })}
-                        className="glass flex w-full items-center gap-4 rounded-[2rem] border border-white/50 p-4 text-left shadow-sm transition-transform active:scale-[0.98]"
+                        className="brand-list-row flex w-full items-center gap-4 rounded-[2rem] p-4 text-left transition-transform active:scale-[0.98]"
                         aria-label={`${copy.ownerTab}: ${owner.name}`}
                       >
                         <div className="relative shrink-0">
@@ -495,7 +506,7 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
               exit={{ opacity: 0, y: -10 }}
               className="space-y-6"
             >
-              <div className="glass rounded-[2.5rem] border border-white/50 p-6 shadow-sm">
+              <div className="brand-panel-shell rounded-[2.5rem] p-6 shadow-sm">
                 <div className="mb-4 flex items-center gap-3">
                   <span className="material-symbols-outlined text-xl text-primary">record_voice_over</span>
                   <h4 className="text-xs font-bold text-primary">
@@ -513,17 +524,18 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
                       }
                     }}
                     placeholder={copy.whisperPlaceholder}
-                    className="w-full rounded-2xl border border-white/70 bg-white/85 py-3 pl-4 pr-14 text-sm text-slate-700 outline-none placeholder:text-slate-300"
+                    className="w-full rounded-2xl border border-white/70 bg-white/85 py-3 pl-4 pr-24 text-sm text-slate-700 outline-none placeholder:text-slate-300"
                     aria-label={copy.sendWhisper}
                   />
                   <button
                     type="button"
                     onClick={() => void submitWhisper()}
                     disabled={submitting || !input.trim()}
-                    className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20 disabled:opacity-60"
+                    className="brand-action-primary absolute right-2 top-1/2 flex h-9 -translate-y-1/2 items-center justify-center gap-1.5 rounded-xl px-3 text-white disabled:opacity-60"
                     aria-label={copy.sendWhisper}
                   >
                     <span className="material-symbols-outlined text-sm">send</span>
+                    <span className="text-[10px] font-black">{copy.sendLabel}</span>
                   </button>
                 </div>
               </div>
@@ -555,7 +567,7 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
                       <CardTag
                         key={item.id}
                         {...cardProps}
-                        className="glass w-full space-y-4 rounded-[2.5rem] border border-white/50 p-6 text-left shadow-sm"
+                        className="brand-list-row w-full space-y-4 rounded-[2.5rem] p-6 text-left"
                       >
                         <div className="flex items-center justify-between gap-4">
                           <div>
@@ -580,6 +592,13 @@ export default function Messages({ onSelectChat, onViewOwner, currentUser, userP
                         )}
 
                         <p className="text-sm font-medium leading-relaxed text-slate-600">{item.body}</p>
+                        {(isSession || isNotification) && (
+                          <div className="flex justify-end">
+                            <span className="rounded-full bg-white/85 px-3 py-1 text-[10px] font-black text-primary shadow-sm">
+                              {isSession ? copy.viewSession : copy.markRead}
+                            </span>
+                          </div>
+                        )}
                       </CardTag>
                     );
                   })

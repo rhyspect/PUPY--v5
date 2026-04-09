@@ -404,6 +404,38 @@
   letter-spacing: 0.18em;
 }
 
+.brand-segment-shell {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 249, 245, 0.74)),
+    linear-gradient(135deg, rgba(242, 141, 45, 0.08), rgba(238, 155, 177, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  box-shadow: 0 18px 38px rgba(122, 81, 59, 0.1);
+}
+
+.brand-segment-active {
+  background: linear-gradient(135deg, rgba(242, 141, 45, 0.96), rgba(238, 155, 177, 0.92));
+  color: white;
+  box-shadow:
+    0 16px 24px rgba(164, 90, 51, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.brand-segment-idle {
+  color: #64748b;
+}
+
+.brand-segment-idle:hover {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.brand-inline-notice {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 250, 246, 0.78)),
+    linear-gradient(135deg, rgba(242, 141, 45, 0.08), rgba(238, 155, 177, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  box-shadow: 0 16px 32px rgba(122, 81, 59, 0.08);
+}
+
 .brand-aura {
   position: relative;
   overflow: hidden;

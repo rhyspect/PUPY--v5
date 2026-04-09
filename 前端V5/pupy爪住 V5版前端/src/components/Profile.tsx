@@ -323,7 +323,7 @@ export default function Profile({
   };
 
   if (loading) {
-    return <div className="px-6 py-12"><div className="glass ambient-card rounded-[2.6rem] border border-white/50 p-8 text-center text-sm text-slate-400 shadow-sm">正在同步真实档案数据…</div></div>;
+    return <div className="px-6 py-12"><div className="brand-panel-shell ambient-card rounded-[2.6rem] p-8 text-center text-sm text-slate-400 shadow-sm">正在同步真实档案数据…</div></div>;
   }
 
   return (
@@ -349,9 +349,9 @@ export default function Profile({
       </section>
 
       <div className="flex justify-center">
-        <div className="glass ambient-card relative flex h-14 w-full max-w-sm rounded-[2rem] border border-white/50 p-1 shadow-sm">
+        <div className="brand-segment-shell ambient-card relative flex h-14 w-full max-w-sm rounded-[2rem] p-1 shadow-sm" role="tablist" aria-label="个人空间分区切换">
           <motion.div
-            className="absolute bottom-1 top-1 z-0 rounded-[1.8rem] bg-white shadow-md"
+            className="absolute bottom-1 top-1 z-0 rounded-[1.8rem] brand-segment-active"
             initial={false}
             animate={{
               left: activeTab === 'reality' ? '4px' : activeTab === 'virtual' ? '33.33%' : '66.66%',
@@ -366,9 +366,12 @@ export default function Profile({
           ].map((tab) => (
             <button
               key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
               onClick={() => setActiveTab(tab.key as ActiveTab)}
               className={`relative z-10 flex flex-1 items-center justify-center gap-1 text-[10px] font-black transition-colors ${
-                activeTab === tab.key ? 'text-primary' : 'text-slate-400'
+                activeTab === tab.key ? 'text-white' : 'brand-segment-idle'
               }`}
             >
               <span className="material-symbols-outlined text-base">{tab.icon}</span>
@@ -390,9 +393,11 @@ export default function Profile({
             <div className="glass ambient-card overflow-hidden rounded-[3rem] border border-white/50 shadow-sm p-8 space-y-6 relative">
               <button
                 onClick={() => setShowEditModal(true)}
-                className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-slate-400 shadow-sm transition-colors hover:text-primary"
+                className="brand-action-secondary absolute right-6 top-6 flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-slate-400 shadow-sm transition-colors hover:text-primary"
+                aria-label="编辑档案"
               >
                 <span className="material-symbols-outlined text-xl">edit</span>
+                <span className="text-[10px] font-black">编辑</span>
               </button>
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 rounded-[2.5rem] overflow-hidden shadow-xl ring-4 ring-primary/5">
@@ -595,8 +600,10 @@ export default function Profile({
               <button
                 onClick={() => void createTwin()}
                 disabled={creatingTwin}
-                className="relative w-full py-4 rounded-[2rem] bg-primary text-white font-black shadow-lg shadow-primary/20 disabled:opacity-60"
+                className="brand-action-primary relative flex w-full items-center justify-center gap-2 rounded-[2rem] py-4 font-black disabled:opacity-60"
+                aria-label={twinReady ? '重新同步数字分身' : '立即生成数字分身'}
               >
+                <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
                 {twinReady ? '重新同步数字分身' : creatingTwin ? '正在生成中…' : '立即生成数字分身'}
               </button>
               {twinFeedback && (
@@ -632,9 +639,11 @@ export default function Profile({
                 <button
                   onClick={() => void submitPrayer()}
                   disabled={sendingPrayer}
-                  className="w-11 h-11 rounded-2xl bg-primary text-white flex items-center justify-center disabled:opacity-60"
+                  className="brand-action-primary flex h-11 items-center justify-center gap-1.5 rounded-2xl px-3 text-white disabled:opacity-60"
+                  aria-label="发送祈愿"
                 >
                   <span className="material-symbols-outlined">send</span>
+                  <span className="text-[10px] font-black">发送</span>
                 </button>
               </div>
               {prayers.length === 0 ? (
@@ -805,7 +814,8 @@ export default function Profile({
                     <button
                       key={item.id}
                       onClick={() => void markNotificationAsRead(item.id)}
-                      className="w-full text-left glass ambient-card rounded-[2.5rem] border border-white/50 shadow-sm p-5 space-y-3"
+                      className="w-full text-left brand-list-row ambient-card rounded-[2.5rem] p-5 space-y-3"
+                      aria-label={`标记通知已读：${item.message}`}
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
@@ -891,7 +901,8 @@ export default function Profile({
                 </div>
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-slate-400 shadow-sm"
+                  className="brand-action-secondary flex h-10 w-10 items-center justify-center rounded-full text-slate-400 shadow-sm"
+                  aria-label="关闭编辑档案弹窗"
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
@@ -936,14 +947,14 @@ export default function Profile({
               <div className="p-8 pt-4 border-t border-slate-100 flex gap-3">
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="flex-1 py-4 rounded-[2rem] bg-slate-100 text-slate-700 font-black"
+                  className="brand-action-secondary flex-1 rounded-[2rem] py-4 font-black text-slate-700"
                 >
                   取消
                 </button>
                 <button
                   onClick={() => void saveProfile()}
                   disabled={saving}
-                  className="flex-1 py-4 rounded-[2rem] bg-primary text-white font-black shadow-lg shadow-primary/20 disabled:opacity-60"
+                  className="brand-action-primary flex-1 rounded-[2rem] py-4 font-black disabled:opacity-60"
                 >
                   {saving ? '保存中…' : '保存修改'}
                 </button>

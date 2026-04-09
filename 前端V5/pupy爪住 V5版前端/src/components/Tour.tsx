@@ -183,7 +183,7 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
         <p className="text-slate-500 font-medium tracking-tight">把地图、主题空间和小院社群做成更沉浸的轻社交入口</p>
       </section>
 
-      <div className="mx-auto flex max-w-[320px] justify-center rounded-[2rem] bg-slate-100 p-1">
+      <div className="brand-segment-shell mx-auto flex max-w-[320px] justify-center rounded-[2rem] p-1" role="tablist" aria-label="云游空间分区切换">
         {[
           { key: 'map', label: '云端地图' },
           { key: 'realms', label: '主题空间' },
@@ -192,8 +192,10 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
           <button
             key={item.key}
             type="button"
+            role="tab"
+            aria-selected={view === item.key}
             onClick={() => setView(item.key as 'map' | 'realms' | 'courtyards')}
-            className={`flex-1 rounded-[1.8rem] py-3 text-[10px] font-black transition-all ${view === item.key ? 'bg-white text-primary shadow-lg' : 'text-slate-400'}`}
+            className={`flex-1 rounded-[1.8rem] py-3 text-[10px] font-black transition-all ${view === item.key ? 'brand-segment-active' : 'brand-segment-idle'}`}
           >
             {item.label}
           </button>
@@ -245,13 +247,14 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
               <div className="h-8 w-8 rounded-full border-4 border-white bg-primary shadow-2xl" />
             </div>
 
-            <div className="absolute bottom-8 left-8 right-8 rounded-[2rem] border border-white/50 bg-white/80 p-4 shadow-xl backdrop-blur-md">
+            <div className="brand-panel-shell absolute bottom-8 left-8 right-8 rounded-[2rem] p-4 shadow-xl backdrop-blur-md">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary">near_me</span>
                   <span className="text-xs font-black leading-relaxed tracking-tight text-slate-900">{mapFeedback}</span>
                 </div>
-                <button type="button" onClick={refreshMap} className="shrink-0 text-[10px] font-black uppercase tracking-widest text-primary">
+                <button type="button" onClick={refreshMap} className="brand-action-secondary flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary">
+                  <span className="material-symbols-outlined text-[15px]">refresh</span>
                   刷新地图
                 </button>
               </div>
@@ -295,11 +298,17 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
         {view === 'courtyards' && (
           <motion.div key="courtyards" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
             <div className="flex gap-3">
-              <button type="button" onClick={() => openCourtModal('create')} className="flex-1 rounded-[2.5rem] border-2 border-dashed border-primary/30 bg-primary/10 py-6 font-black text-primary transition hover:bg-primary/15">
-                创建小院
+              <button type="button" onClick={() => openCourtModal('create')} className="brand-panel-shell flex-1 rounded-[2.5rem] py-6 font-black text-primary transition hover:bg-primary/15">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="material-symbols-outlined text-2xl">add_home_work</span>
+                  <span>创建小院</span>
+                </div>
               </button>
-              <button type="button" onClick={() => openCourtModal('join')} className="flex-1 rounded-[2.5rem] border-2 border-dashed border-slate-200 bg-slate-100 py-6 font-black text-slate-500 transition hover:bg-slate-200">
-                加入小院
+              <button type="button" onClick={() => openCourtModal('join')} className="brand-list-row flex-1 rounded-[2.5rem] py-6 font-black text-slate-500 transition hover:bg-slate-200">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="material-symbols-outlined text-2xl">group_add</span>
+                  <span>加入小院</span>
+                </div>
               </button>
             </div>
 
@@ -315,8 +324,8 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
                       <span className="text-[9px] font-bold text-slate-300">ID: {court.id}</span>
                     </div>
                   </div>
-                  <button type="button" onClick={() => { setModalData((prev) => ({ ...prev, id: court.id })); openCourtModal('join'); }} className="rounded-full bg-slate-900 px-4 py-2 text-[10px] font-black text-white transition hover:bg-primary">
-                    加入
+                  <button type="button" onClick={() => { setModalData((prev) => ({ ...prev, id: court.id })); openCourtModal('join'); }} className="brand-action-dark rounded-full px-4 py-2 text-[10px] font-black transition">
+                    加入小院
                   </button>
                 </div>
               ))}
@@ -419,10 +428,11 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
               )}
 
               <div className="mt-6 flex gap-3">
-                <button type="button" onClick={() => { setShowModal(null); setModalFeedback(null); }} className="flex-1 rounded-2xl bg-slate-100 py-4 font-black text-slate-500">
+                <button type="button" onClick={() => { setShowModal(null); setModalFeedback(null); }} className="brand-action-secondary flex-1 rounded-2xl py-4 font-black text-slate-500">
                   取消
                 </button>
-                <button type="button" onClick={showModal === 'create' ? handleCreate : handleJoin} className="flex-1 rounded-2xl bg-primary py-4 font-black text-white shadow-lg shadow-primary/20">
+                <button type="button" onClick={showModal === 'create' ? handleCreate : handleJoin} className="brand-action-primary flex flex-1 items-center justify-center gap-2 rounded-2xl py-4 font-black">
+                  <span className="material-symbols-outlined text-[18px]">{showModal === 'create' ? 'add_home_work' : 'login'}</span>
                   确认{showModal === 'create' ? '创建' : '加入'}
                 </button>
               </div>
