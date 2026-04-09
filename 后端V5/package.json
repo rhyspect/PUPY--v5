@@ -13,6 +13,7 @@
                     "db:init":  "node dist/scripts/initDb.js",
                     "db:seed":  "node dist/scripts/seed.js",
                     "db:seed:rich":  "tsx src/scripts/seedRichDemo.ts",
+                    "db:generate:operations-sql":  "tsx src/scripts/generateOperationsSeedSql.ts",
                     "db:migrate:operations":  "tsx src/scripts/migrateOperationsToSupabase.ts"
                 },
     "dependencies":  {

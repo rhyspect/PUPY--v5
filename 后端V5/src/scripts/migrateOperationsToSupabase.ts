@@ -62,5 +62,8 @@ async function main() {
 
 main().catch((error) => {
   console.error('Migrate operations to Supabase failed:', error);
+  if (String(error?.message || '').includes('schema cache')) {
+    console.error('提示：如果你已经在 Supabase SQL Editor 执行过 schema.sql，但 REST 仍然看不到新表，请继续执行 src/database/operations_seed.sql，并等待 30-60 秒后重试。');
+  }
   process.exit(1);
 });
