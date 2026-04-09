@@ -1,9 +1,10 @@
-﻿import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { PETS, REALMS } from '../constants';
 import type { Pet } from '../types';
+import apiService, { type AdminRuntimeRealm } from '../services/api';
 
-const CLOUD_LOADING_COPY = [
+const DEFAULT_CLOUD_LOADING_COPY = [
   '正在帮[狗狗名字]穿上云端漫步靴...',
   '[狗狗名字]正兴奋地跑向云端森林...',
   '正在同步[狗狗名字]的社交嗅觉...',
@@ -17,6 +18,7 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
   const [modalFeedback, setModalFeedback] = useState<string | null>(null);
   const [mapFeedback, setMapFeedback] = useState('附近有 12 位宠物伙伴在线互动');
   const [cloudEntry, setCloudEntry] = useState<{ phrase: string; target: string } | null>(null);
+  const [runtimeRealms, setRuntimeRealms] = useState<AdminRuntimeRealm[]>([]);
   const phraseTimerRef = useRef<number | null>(null);
   const finishTimerRef = useRef<number | null>(null);
   const [courtyards, setCourtyards] = useState([
@@ -84,6 +86,29 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
 
   const petName = userPet?.name || '小狗狗';
 
+  const activeRealms = useMemo(() => {
+    if (!runtimeRealms.length) return REALMS;
+    const runtimeMap = new Map<string, AdminRuntimeRealm>(runtimeRealms.map((realm) => [realm.id, realm]));
+    return REALMS
+      .map((realm) => {
+        const runtime = runtimeMap.get(realm.id);
+        if (!runtime) return realm;
+        return {
+          ...realm,
+          name: runtime.name || realm.name,
+          description: runtime.description || realm.description,
+          onlineCount: Number.isFinite(Number(runtime.onlineCount)) ? Number(runtime.onlineCount) : realm.onlineCount,
+          active: runtime.active,
+        };
+      })
+      .filter((realm) => realm.active !== false);
+  }, [runtimeRealms]);
+
+  const cloudLoadingCopy = useMemo(() => {
+    const merged = runtimeRealms.flatMap((realm) => realm.loadingPhrases || []).filter(Boolean);
+    return merged.length ? merged : DEFAULT_CLOUD_LOADING_COPY;
+  }, [runtimeRealms]);
+
   const clearCloudTimers = () => {
     if (phraseTimerRef.current) {
       window.clearInterval(phraseTimerRef.current);
@@ -97,8 +122,35 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
 
   useEffect(() => clearCloudTimers, []);
 
+  useEffect(() => {
+    let alive = true;
+
+    const syncRuntimeConfig = async () => {
+      try {
+        const response = await apiService.getPublicRuntimeConfig();
+        if (!alive) return;
+        const realms = response.data?.realms || [];
+        if (realms.length) {
+          setRuntimeRealms(realms);
+          const totalOnline = realms.reduce((sum, realm) => sum + (Number.isFinite(Number(realm.onlineCount)) ? Number(realm.onlineCount) : 0), 0);
+          if (totalOnline > 0) {
+            setMapFeedback(`云游地图已同步，当前有 ${totalOnline} 位宠物伙伴在线互动`);
+          }
+        }
+      } catch {
+        // Fall back to local defaults when the public runtime config is unavailable.
+      }
+    };
+
+    void syncRuntimeConfig();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const randomCloudCopy = () =>
-    CLOUD_LOADING_COPY[Math.floor(Math.random() * CLOUD_LOADING_COPY.length)].replace('[狗狗名字]', petName);
+    cloudLoadingCopy[Math.floor(Math.random() * cloudLoadingCopy.length)].replace('[狗狗名字]', petName);
 
   const startCloudEntry = (target: string) => {
     if (cloudEntry) return;
@@ -209,7 +261,7 @@ export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => 
 
         {view === 'realms' && (
           <motion.div key="realms" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="grid grid-cols-1 gap-6">
-            {REALMS.map((realm) => (
+            {activeRealms.map((realm) => (
               <motion.button
                 key={realm.id}
                 type="button"

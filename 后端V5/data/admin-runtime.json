@@ -1,0 +1,935 @@
+{
+  "realms": [
+    {
+      "id": "misty-forest",
+      "name": "雾雨深林",
+      "description": "轻雾、溪流和低饱和的安静氛围，适合慢节奏深度连接。",
+      "onlineCount": 120,
+      "loadingPhrases": [
+        "正在帮[狗狗名字]穿上云端漫步靴...",
+        "[狗狗名字]正兴奋地跑向云端森林...",
+        "正在同步[狗狗名字]的社交嗅觉...",
+        "嗅到了！附近有 12 只熟悉的小伙伴..."
+      ],
+      "active": true
+    },
+    {
+      "id": "afternoon-peninsula",
+      "name": "半岛午后",
+      "description": "阳光、海风和慵懒陪伴感，适合同城散步与轻社交。",
+      "onlineCount": 85,
+      "loadingPhrases": [
+        "正在帮[狗狗名字]穿上云端漫步靴...",
+        "[狗狗名字]正兴奋地跑向云端森林...",
+        "正在同步[狗狗名字]的社交嗅觉...",
+        "嗅到了！附近有 12 只熟悉的小伙伴..."
+      ],
+      "active": true
+    },
+    {
+      "id": "neon-city",
+      "name": "霓虹幻境",
+      "description": "高互动、高表达的都市空间，适合快速破冰和活动邀约。",
+      "onlineCount": 340,
+      "loadingPhrases": [
+        "正在帮[狗狗名字]穿上云端漫步靴...",
+        "[狗狗名字]正兴奋地跑向云端森林...",
+        "正在同步[狗狗名字]的社交嗅觉...",
+        "嗅到了！附近有 12 只熟悉的小伙伴..."
+      ],
+      "active": true
+    }
+  ],
+  "activityLogs": [
+    {
+      "id": "df2cf49f-5705-4fd3-ace2-3808cc1bc843",
+      "actorEmail": "rhyssvv@gmail.com",
+      "action": "create",
+      "entityType": "chat_session",
+      "entityId": "2b4e6a17-3507-4215-8627-eae60440108f",
+      "summary": "创建了主人聊天会话 PUPY-CH-249999。",
+      "createdAt": "2026-04-09T01:43:42.898Z"
+    },
+    {
+      "id": "edeffb77-a8f1-4497-941f-1ea41cef9777",
+      "actorEmail": "rhyssvv@gmail.com",
+      "action": "update",
+      "entityType": "market_order",
+      "entityId": "427b0861-e739-4f0d-8a59-234c6381677a",
+      "summary": "更新了商城订单 PUPY-MO-240999。",
+      "createdAt": "2026-04-09T01:43:42.885Z"
+    },
+    {
+      "id": "2f24fab5-1f1a-4350-bf16-03e3f59c19c0",
+      "actorEmail": "rhyssvv@gmail.com",
+      "action": "create",
+      "entityType": "market_order",
+      "entityId": "427b0861-e739-4f0d-8a59-234c6381677a",
+      "summary": "创建了商城订单 PUPY-MO-240999。",
+      "createdAt": "2026-04-09T01:43:42.839Z"
+    }
+  ],
+  "marketOrders": [
+    {
+      "id": "427b0861-e739-4f0d-8a59-234c6381677a",
+      "orderNo": "PUPY-MO-240999",
+      "userName": "Rhys 运营测试",
+      "userEmail": "rhyssvv@gmail.com",
+      "petName": "Pupy",
+      "sellerName": "爪住精选旗舰店",
+      "city": "上海",
+      "status": "已审核待发货",
+      "paymentStatus": "已付款",
+      "fulfillmentStatus": "待拣货",
+      "total": 399,
+      "quantity": 2,
+      "note": "后台已完成审核流转验证。",
+      "source": "主粮用品",
+      "items": [
+        {
+          "productId": "food-qa-001",
+          "title": "后台验证主粮包",
+          "image": "",
+          "unitPrice": 199.5,
+          "quantity": 2
+        }
+      ],
+      "createdAt": "2026-04-09T01:43:42.836Z",
+      "updatedAt": "2026-04-09T01:43:42.884Z"
+    },
+    {
+      "id": "market-order-001",
+      "orderNo": "PUPY-MO-240901",
+      "userName": "苏栗",
+      "userEmail": "suli@pupy.app",
+      "petName": "奶油",
+      "sellerName": "爪住精选旗舰店",
+      "city": "上海",
+      "status": "待发货",
+      "paymentStatus": "已付款",
+      "fulfillmentStatus": "待拣货",
+      "total": 428,
+      "quantity": 3,
+      "note": "高蛋白主粮 + 关节营养包 + 飞盘补货。",
+      "source": "主粮用品",
+      "items": [
+        {
+          "productId": "food-001",
+          "title": "高适口冻干主粮",
+          "image": "",
+          "unitPrice": 199,
+          "quantity": 1
+        },
+        {
+          "productId": "care-001",
+          "title": "关节养护营养包",
+          "image": "",
+          "unitPrice": 129,
+          "quantity": 1
+        },
+        {
+          "productId": "toy-001",
+          "title": "飞盘训练套组",
+          "image": "",
+          "unitPrice": 50,
+          "quantity": 2
+        }
+      ],
+      "createdAt": "2026-04-08T21:42:15.123Z",
+      "updatedAt": "2026-04-08T23:42:15.123Z"
+    },
+    {
+      "id": "market-order-002",
+      "orderNo": "PUPY-MO-240902",
+      "userName": "沈雾",
+      "userEmail": "shenwu@pupy.app",
+      "petName": "糯米",
+      "sellerName": "小爪营养仓",
+      "city": "上海",
+      "status": "配送中",
+      "paymentStatus": "已付款",
+      "fulfillmentStatus": "运输中",
+      "total": 316,
+      "quantity": 2,
+      "note": "晚间配送，前台可代收。",
+      "source": "主粮用品",
+      "items": [
+        {
+          "productId": "food-002",
+          "title": "低敏羊肉主粮",
+          "image": "",
+          "unitPrice": 158,
+          "quantity": 2
+        }
+      ],
+      "createdAt": "2026-04-08T17:42:15.123Z",
+      "updatedAt": "2026-04-09T00:42:15.123Z"
+    },
+    {
+      "id": "market-order-003",
+      "orderNo": "PUPY-MO-240903",
+      "userName": "乔晚",
+      "userEmail": "qiaowan@pupy.app",
+      "petName": "七喜",
+      "sellerName": "云端手作补给站",
+      "city": "杭州",
+      "status": "已完成",
+      "paymentStatus": "已付款",
+      "fulfillmentStatus": "已签收",
+      "total": 268,
+      "quantity": 4,
+      "note": "回购款式，适合拍照出片。",
+      "source": "主粮用品",
+      "items": [
+        {
+          "productId": "toy-002",
+          "title": "毛绒牵引绳配件",
+          "image": "",
+          "unitPrice": 88,
+          "quantity": 2
+        },
+        {
+          "productId": "care-002",
+          "title": "香波旅行装",
+          "image": "",
+          "unitPrice": 46,
+          "quantity": 2
+        }
+      ],
+      "createdAt": "2026-04-08T11:42:15.123Z",
+      "updatedAt": "2026-04-08T19:42:15.123Z"
+    },
+    {
+      "id": "market-order-004",
+      "orderNo": "PUPY-MO-240904",
+      "userName": "林檬",
+      "userEmail": "linmeng@pupy.app",
+      "petName": "琥珀",
+      "sellerName": "爪住集市 · 苏州门店",
+      "city": "苏州",
+      "status": "待客服确认",
+      "paymentStatus": "待付款",
+      "fulfillmentStatus": "未出库",
+      "total": 188,
+      "quantity": 2,
+      "note": "用户希望改成周末自提。",
+      "source": "主粮用品",
+      "items": [
+        {
+          "productId": "food-003",
+          "title": "鲜肉主粮试吃礼盒",
+          "image": "",
+          "unitPrice": 128,
+          "quantity": 1
+        },
+        {
+          "productId": "toy-003",
+          "title": "耐咬发声球",
+          "image": "",
+          "unitPrice": 60,
+          "quantity": 1
+        }
+      ],
+      "createdAt": "2026-04-08T07:42:15.123Z",
+      "updatedAt": "2026-04-08T15:42:15.123Z"
+    },
+    {
+      "id": "market-order-005",
+      "orderNo": "PUPY-MO-240905",
+      "userName": "唐梨",
+      "userEmail": "tangli@pupy.app",
+      "petName": "可颂",
+      "sellerName": "营养护理实验室",
+      "city": "南京",
+      "status": "售后处理中",
+      "paymentStatus": "已退款中",
+      "fulfillmentStatus": "退货中",
+      "total": 256,
+      "quantity": 2,
+      "note": "用户反馈尺码偏小，申请换货。",
+      "source": "主粮用品",
+      "items": [
+        {
+          "productId": "care-003",
+          "title": "护毛精华喷雾",
+          "image": "",
+          "unitPrice": 128,
+          "quantity": 2
+        }
+      ],
+      "createdAt": "2026-04-07T23:42:15.123Z",
+      "updatedAt": "2026-04-08T22:42:15.123Z"
+    },
+    {
+      "id": "market-order-006",
+      "orderNo": "PUPY-MO-240906",
+      "userName": "许听",
+      "userEmail": "xuting@pupy.app",
+      "petName": "暖暖",
+      "sellerName": "城市漫游装备铺",
+      "city": "上海",
+      "status": "已完成",
+      "paymentStatus": "已付款",
+      "fulfillmentStatus": "已签收",
+      "total": 539,
+      "quantity": 5,
+      "note": "作为云游地图活动礼包发放。",
+      "source": "主粮用品",
+      "items": [
+        {
+          "productId": "toy-004",
+          "title": "夜光胸背套装",
+          "image": "",
+          "unitPrice": 159,
+          "quantity": 1
+        },
+        {
+          "productId": "food-004",
+          "title": "冻干零食组合",
+          "image": "",
+          "unitPrice": 95,
+          "quantity": 4
+        }
+      ],
+      "createdAt": "2026-04-07T15:42:15.123Z",
+      "updatedAt": "2026-04-08T13:42:15.123Z"
+    },
+    {
+      "id": "market-order-007",
+      "orderNo": "PUPY-MO-240907",
+      "userName": "顾晴",
+      "userEmail": "guqing@pupy.app",
+      "petName": "栗子",
+      "sellerName": "社交训练补给仓",
+      "city": "杭州",
+      "status": "待发货",
+      "paymentStatus": "已付款",
+      "fulfillmentStatus": "待拣货",
+      "total": 299,
+      "quantity": 3,
+      "note": "备注活动价优先发。",
+      "source": "主粮用品",
+      "items": [
+        {
+          "productId": "toy-005",
+          "title": "飞盘进阶组合",
+          "image": "",
+          "unitPrice": 99,
+          "quantity": 3
+        }
+      ],
+      "createdAt": "2026-04-07T07:42:15.123Z",
+      "updatedAt": "2026-04-08T07:42:15.123Z"
+    },
+    {
+      "id": "market-order-008",
+      "orderNo": "PUPY-MO-240908",
+      "userName": "孟枝",
+      "userEmail": "mengzhi@pupy.app",
+      "petName": "布丁",
+      "sellerName": "海边补给铺",
+      "city": "宁波",
+      "status": "已完成",
+      "paymentStatus": "已付款",
+      "fulfillmentStatus": "已签收",
+      "total": 172,
+      "quantity": 2,
+      "note": "沙滩出游用具已完成回购。",
+      "source": "主粮用品",
+      "items": [
+        {
+          "productId": "care-004",
+          "title": "足部清洁泡沫",
+          "image": "",
+          "unitPrice": 86,
+          "quantity": 2
+        }
+      ],
+      "createdAt": "2026-04-06T17:42:15.123Z",
+      "updatedAt": "2026-04-08T05:42:15.123Z"
+    }
+  ],
+  "walkOrders": [
+    {
+      "id": "walk-order-001",
+      "orderNo": "PUPY-WK-240901",
+      "userName": "苏栗",
+      "userEmail": "suli@pupy.app",
+      "petName": "奶油",
+      "walkerName": "徐川 · 认证遛犬师",
+      "city": "上海",
+      "serviceZone": "徐汇滨江",
+      "status": "待确认",
+      "reviewStatus": "待审核",
+      "scheduledAt": "2026-04-09T13:42:15.123Z",
+      "durationMinutes": 60,
+      "price": 168,
+      "note": "希望带上飞盘并拍几张互动照。",
+      "createdAt": "2026-04-08T22:42:15.123Z",
+      "updatedAt": "2026-04-08T23:42:15.123Z"
+    },
+    {
+      "id": "walk-order-002",
+      "orderNo": "PUPY-WK-240902",
+      "userName": "沈雾",
+      "userEmail": "shenwu@pupy.app",
+      "petName": "糯米",
+      "walkerName": "PUPY 城市陪伴官 Luna",
+      "city": "上海",
+      "serviceZone": "静安雕塑公园",
+      "status": "已接单",
+      "reviewStatus": "已通过",
+      "scheduledAt": "2026-04-09T07:42:15.123Z",
+      "durationMinutes": 45,
+      "price": 138,
+      "note": "偏安静路线，避免过多人流。",
+      "createdAt": "2026-04-08T19:42:15.123Z",
+      "updatedAt": "2026-04-09T00:42:15.123Z"
+    },
+    {
+      "id": "walk-order-003",
+      "orderNo": "PUPY-WK-240903",
+      "userName": "乔晚",
+      "userEmail": "qiaowan@pupy.app",
+      "petName": "七喜",
+      "walkerName": "摄影遛遛搭子 阿辰",
+      "city": "杭州",
+      "serviceZone": "西湖绿道",
+      "status": "已完成",
+      "reviewStatus": "已通过",
+      "scheduledAt": "2026-04-08T17:42:15.123Z",
+      "durationMinutes": 90,
+      "price": 218,
+      "note": "已补回 20 张精选照片。",
+      "createdAt": "2026-04-08T05:42:15.123Z",
+      "updatedAt": "2026-04-08T21:42:15.123Z"
+    },
+    {
+      "id": "walk-order-004",
+      "orderNo": "PUPY-WK-240904",
+      "userName": "林檬",
+      "userEmail": "linmeng@pupy.app",
+      "petName": "琥珀",
+      "walkerName": "苏州草地局主理人",
+      "city": "苏州",
+      "serviceZone": "独墅湖公园",
+      "status": "已取消",
+      "reviewStatus": "已拒绝",
+      "scheduledAt": "2026-04-09T21:42:15.123Z",
+      "durationMinutes": 60,
+      "price": 158,
+      "note": "因天气原因取消，用户待重新下单。",
+      "createdAt": "2026-04-08T09:42:15.123Z",
+      "updatedAt": "2026-04-08T20:42:15.123Z"
+    },
+    {
+      "id": "walk-order-005",
+      "orderNo": "PUPY-WK-240905",
+      "userName": "唐梨",
+      "userEmail": "tangli@pupy.app",
+      "petName": "可颂",
+      "walkerName": "营养运动陪伴师 Mia",
+      "city": "南京",
+      "serviceZone": "玄武湖环线",
+      "status": "待服务",
+      "reviewStatus": "已通过",
+      "scheduledAt": "2026-04-10T05:42:15.123Z",
+      "durationMinutes": 75,
+      "price": 198,
+      "note": "需同步记录运动心率与饮水频次。",
+      "createdAt": "2026-04-08T01:42:15.123Z",
+      "updatedAt": "2026-04-08T18:42:15.123Z"
+    },
+    {
+      "id": "walk-order-006",
+      "orderNo": "PUPY-WK-240906",
+      "userName": "顾晴",
+      "userEmail": "guqing@pupy.app",
+      "petName": "栗子",
+      "walkerName": "飞盘陪练小组",
+      "city": "杭州",
+      "serviceZone": "滨江飞盘草坪",
+      "status": "已接单",
+      "reviewStatus": "已通过",
+      "scheduledAt": "2026-04-10T13:42:15.123Z",
+      "durationMinutes": 60,
+      "price": 188,
+      "note": "高活跃用户，优先安排社交训练型遛遛。",
+      "createdAt": "2026-04-07T19:42:15.123Z",
+      "updatedAt": "2026-04-08T16:42:15.123Z"
+    }
+  ],
+  "careBookings": [
+    {
+      "id": "care-booking-001",
+      "bookingNo": "PUPY-CR-240901",
+      "userName": "苏栗",
+      "userEmail": "suli@pupy.app",
+      "petName": "奶油",
+      "merchantName": "爪住护理中心 · 徐汇店",
+      "city": "上海",
+      "serviceName": "洗护 + 精修 + 香氛护理",
+      "status": "待到店",
+      "reviewStatus": "已通过",
+      "scheduledAt": "2026-04-09T11:42:15.123Z",
+      "price": 299,
+      "note": "周末上午档，需温和香氛。",
+      "createdAt": "2026-04-08T20:42:15.123Z",
+      "updatedAt": "2026-04-09T00:42:15.123Z"
+    },
+    {
+      "id": "care-booking-002",
+      "bookingNo": "PUPY-CR-240902",
+      "userName": "沈雾",
+      "userEmail": "shenwu@pupy.app",
+      "petName": "糯米",
+      "merchantName": "安静系护理室",
+      "city": "上海",
+      "serviceName": "低刺激精洗护理",
+      "status": "已确认",
+      "reviewStatus": "已通过",
+      "scheduledAt": "2026-04-09T19:42:15.123Z",
+      "price": 236,
+      "note": "门店已安排低噪护理位。",
+      "createdAt": "2026-04-08T15:42:15.123Z",
+      "updatedAt": "2026-04-08T23:42:15.123Z"
+    },
+    {
+      "id": "care-booking-003",
+      "bookingNo": "PUPY-CR-240903",
+      "userName": "乔晚",
+      "userEmail": "qiaowan@pupy.app",
+      "petName": "七喜",
+      "merchantName": "城市美容实验室",
+      "city": "杭州",
+      "serviceName": "拍照造型护理",
+      "status": "已完成",
+      "reviewStatus": "已通过",
+      "scheduledAt": "2026-04-08T13:42:15.123Z",
+      "price": 328,
+      "note": "用户已追加下次造型预约。",
+      "createdAt": "2026-04-08T03:42:15.123Z",
+      "updatedAt": "2026-04-08T19:42:15.123Z"
+    },
+    {
+      "id": "care-booking-004",
+      "bookingNo": "PUPY-CR-240904",
+      "userName": "林檬",
+      "userEmail": "linmeng@pupy.app",
+      "petName": "琥珀",
+      "merchantName": "草地局合作门店",
+      "city": "苏州",
+      "serviceName": "运动后舒缓护理",
+      "status": "待审核",
+      "reviewStatus": "待审核",
+      "scheduledAt": "2026-04-10T07:42:15.123Z",
+      "price": 188,
+      "note": "新增合作商家，等待运营复核资质。",
+      "createdAt": "2026-04-07T21:42:15.123Z",
+      "updatedAt": "2026-04-08T13:42:15.123Z"
+    },
+    {
+      "id": "care-booking-005",
+      "bookingNo": "PUPY-CR-240905",
+      "userName": "唐梨",
+      "userEmail": "tangli@pupy.app",
+      "petName": "可颂",
+      "merchantName": "营养护理研究所",
+      "city": "南京",
+      "serviceName": "皮毛修复疗程",
+      "status": "待到店",
+      "reviewStatus": "已通过",
+      "scheduledAt": "2026-04-10T19:42:15.123Z",
+      "price": 468,
+      "note": "需同步上传护理前后对比图。",
+      "createdAt": "2026-04-07T17:42:15.123Z",
+      "updatedAt": "2026-04-08T17:42:15.123Z"
+    },
+    {
+      "id": "care-booking-006",
+      "bookingNo": "PUPY-CR-240906",
+      "userName": "许听",
+      "userEmail": "xuting@pupy.app",
+      "petName": "暖暖",
+      "merchantName": "城市漫步美容站",
+      "city": "上海",
+      "serviceName": "旅行清洁护理",
+      "status": "已完成",
+      "reviewStatus": "已通过",
+      "scheduledAt": "2026-04-08T05:42:15.123Z",
+      "price": 208,
+      "note": "已带动 3 位用户跟单预约。",
+      "createdAt": "2026-04-07T13:42:15.123Z",
+      "updatedAt": "2026-04-08T16:42:15.123Z"
+    }
+  ],
+  "petLoveRecords": [
+    {
+      "id": "pet-love-001",
+      "petAName": "奶油",
+      "petBName": "云朵",
+      "ownerAName": "苏栗",
+      "ownerBName": "白溪",
+      "city": "上海",
+      "status": "高热匹配",
+      "reviewStatus": "已通过",
+      "romanceStage": "已互相关注",
+      "compatibilityScore": 0.96,
+      "note": "用户双方都连续三天打开了聊天会话。",
+      "createdAt": "2026-04-08T20:42:15.123Z",
+      "updatedAt": "2026-04-09T00:42:15.123Z"
+    },
+    {
+      "id": "pet-love-002",
+      "petAName": "糯米",
+      "petBName": "可颂",
+      "ownerAName": "沈雾",
+      "ownerBName": "唐梨",
+      "city": "上海",
+      "status": "待进一步观察",
+      "reviewStatus": "待审核",
+      "romanceStage": "资料互看中",
+      "compatibilityScore": 0.82,
+      "note": "建议先安排线下遛遛局再推进。",
+      "createdAt": "2026-04-08T13:42:15.123Z",
+      "updatedAt": "2026-04-08T21:42:15.123Z"
+    },
+    {
+      "id": "pet-love-003",
+      "petAName": "七喜",
+      "petBName": "栗子",
+      "ownerAName": "乔晚",
+      "ownerBName": "顾晴",
+      "city": "杭州",
+      "status": "已进入聊天",
+      "reviewStatus": "已通过",
+      "romanceStage": "约线下局",
+      "compatibilityScore": 0.88,
+      "note": "两位主人都属于高内容活跃用户。",
+      "createdAt": "2026-04-08T07:42:15.123Z",
+      "updatedAt": "2026-04-08T19:42:15.123Z"
+    },
+    {
+      "id": "pet-love-004",
+      "petAName": "暖暖",
+      "petBName": "泡芙",
+      "ownerAName": "许听",
+      "ownerBName": "叶澄",
+      "city": "上海",
+      "status": "平台推荐位",
+      "reviewStatus": "已通过",
+      "romanceStage": "双向右滑",
+      "compatibilityScore": 0.91,
+      "note": "推荐给重度测试用户展示热闹氛围。",
+      "createdAt": "2026-04-08T01:42:15.123Z",
+      "updatedAt": "2026-04-08T18:42:15.123Z"
+    },
+    {
+      "id": "pet-love-005",
+      "petAName": "布丁",
+      "petBName": "蜜豆",
+      "ownerAName": "孟枝",
+      "ownerBName": "周翎",
+      "city": "成都",
+      "status": "内容热度高",
+      "reviewStatus": "已通过",
+      "romanceStage": "日记互评中",
+      "compatibilityScore": 0.86,
+      "note": "双方最近互动频次显著上升。",
+      "createdAt": "2026-04-07T19:42:15.123Z",
+      "updatedAt": "2026-04-08T15:42:15.123Z"
+    },
+    {
+      "id": "pet-love-006",
+      "petAName": "琥珀",
+      "petBName": "拿铁",
+      "ownerAName": "林檬",
+      "ownerBName": "袁澈",
+      "city": "上海",
+      "status": "运营关注中",
+      "reviewStatus": "待复核",
+      "romanceStage": "约第一次见面",
+      "compatibilityScore": 0.79,
+      "note": "需要补充健康记录后再放量展示。",
+      "createdAt": "2026-04-07T09:42:15.123Z",
+      "updatedAt": "2026-04-08T11:42:15.123Z"
+    }
+  ],
+  "chatSessions": [
+    {
+      "id": "2b4e6a17-3507-4215-8627-eae60440108f",
+      "sessionNo": "PUPY-CH-249999",
+      "type": "owner",
+      "title": "Rhys × 苏栗 · 后台验证会话",
+      "participants": [
+        "Rhys",
+        "苏栗"
+      ],
+      "relatedPets": [
+        "Pupy",
+        "奶油"
+      ],
+      "city": "上海",
+      "status": "待运营复核",
+      "unreadCount": 1,
+      "latestSnippet": "后台新增会话验证成功。",
+      "messages": [
+        {
+          "id": "verify-chat-msg-1",
+          "senderName": "Rhys",
+          "role": "owner",
+          "content": "这里是后台新建会话验证。",
+          "createdAt": "2026-04-09T09:00:00.000Z",
+          "moderationStatus": "正常"
+        }
+      ],
+      "createdAt": "2026-04-09T01:43:42.897Z",
+      "updatedAt": "2026-04-09T01:43:42.897Z"
+    },
+    {
+      "id": "owner-chat-001",
+      "sessionNo": "PUPY-CH-240901",
+      "type": "owner",
+      "title": "苏栗 × 白溪 · 主人聊天",
+      "participants": [
+        "苏栗",
+        "白溪"
+      ],
+      "relatedPets": [
+        "奶油",
+        "云朵"
+      ],
+      "city": "上海",
+      "status": "活跃",
+      "unreadCount": 2,
+      "latestSnippet": "这周末可以先一起去滨江遛一圈。",
+      "messages": [
+        {
+          "id": "owner-chat-001-msg-1",
+          "senderName": "苏栗",
+          "role": "owner",
+          "content": "我看云朵最近的日记真的很治愈。",
+          "createdAt": "2026-04-08T18:42:15.123Z",
+          "moderationStatus": "正常"
+        },
+        {
+          "id": "owner-chat-001-msg-2",
+          "senderName": "白溪",
+          "role": "owner",
+          "content": "奶油也太会接飞盘了，周末要不要一起遛？",
+          "createdAt": "2026-04-08T19:42:15.123Z",
+          "moderationStatus": "正常"
+        },
+        {
+          "id": "owner-chat-001-msg-3",
+          "senderName": "苏栗",
+          "role": "owner",
+          "content": "可以，我把时间空出来。",
+          "createdAt": "2026-04-08T23:42:15.123Z",
+          "moderationStatus": "正常"
+        }
+      ],
+      "createdAt": "2026-04-08T13:42:15.123Z",
+      "updatedAt": "2026-04-08T23:42:15.123Z"
+    },
+    {
+      "id": "owner-chat-002",
+      "sessionNo": "PUPY-CH-240902",
+      "type": "owner",
+      "title": "乔晚 × 顾晴 · 主人聊天",
+      "participants": [
+        "乔晚",
+        "顾晴"
+      ],
+      "relatedPets": [
+        "七喜",
+        "栗子"
+      ],
+      "city": "杭州",
+      "status": "高频互动",
+      "unreadCount": 0,
+      "latestSnippet": "活动海报我今晚做好发给你。",
+      "messages": [
+        {
+          "id": "owner-chat-002-msg-1",
+          "senderName": "顾晴",
+          "role": "owner",
+          "content": "线下局的人数已经快满了。",
+          "createdAt": "2026-04-08T14:42:15.123Z",
+          "moderationStatus": "正常"
+        },
+        {
+          "id": "owner-chat-002-msg-2",
+          "senderName": "乔晚",
+          "role": "owner",
+          "content": "我来做一版海报，七喜当封面。",
+          "createdAt": "2026-04-08T20:42:15.123Z",
+          "moderationStatus": "正常"
+        }
+      ],
+      "createdAt": "2026-04-08T07:42:15.123Z",
+      "updatedAt": "2026-04-08T20:42:15.123Z"
+    },
+    {
+      "id": "pet-chat-001",
+      "sessionNo": "PUPY-PC-240901",
+      "type": "pet",
+      "title": "奶油 × 云朵 · 宠物私语",
+      "participants": [
+        "奶油",
+        "云朵"
+      ],
+      "relatedPets": [
+        "奶油",
+        "云朵"
+      ],
+      "city": "上海",
+      "status": "热聊中",
+      "unreadCount": 1,
+      "latestSnippet": "下次见面我要带上我最喜欢的球。",
+      "messages": [
+        {
+          "id": "pet-chat-001-msg-1",
+          "senderName": "奶油",
+          "role": "pet",
+          "content": "汪，我听说你家窗边很适合晒太阳。",
+          "createdAt": "2026-04-08T16:42:15.123Z",
+          "moderationStatus": "正常"
+        },
+        {
+          "id": "pet-chat-001-msg-2",
+          "senderName": "云朵",
+          "role": "pet",
+          "content": "喵，那你来时记得带上会发声的小球。",
+          "createdAt": "2026-04-08T21:42:15.123Z",
+          "moderationStatus": "正常"
+        }
+      ],
+      "createdAt": "2026-04-08T09:42:15.123Z",
+      "updatedAt": "2026-04-08T21:42:15.123Z"
+    },
+    {
+      "id": "pet-chat-002",
+      "sessionNo": "PUPY-PC-240902",
+      "type": "pet",
+      "title": "暖暖 × 泡芙 · 宠物私语",
+      "participants": [
+        "暖暖",
+        "泡芙"
+      ],
+      "relatedPets": [
+        "暖暖",
+        "泡芙"
+      ],
+      "city": "上海",
+      "status": "已建立默契",
+      "unreadCount": 0,
+      "latestSnippet": "云端森林里见，我带上散步靴。",
+      "messages": [
+        {
+          "id": "pet-chat-002-msg-1",
+          "senderName": "暖暖",
+          "role": "pet",
+          "content": "我已经学会怎么从雾雨深林跑去半岛午后了。",
+          "createdAt": "2026-04-08T12:42:15.123Z",
+          "moderationStatus": "正常"
+        },
+        {
+          "id": "pet-chat-002-msg-2",
+          "senderName": "泡芙",
+          "role": "pet",
+          "content": "那我在入口等你，一起冲。",
+          "createdAt": "2026-04-08T17:42:15.123Z",
+          "moderationStatus": "正常"
+        }
+      ],
+      "createdAt": "2026-04-08T05:42:15.123Z",
+      "updatedAt": "2026-04-08T17:42:15.123Z"
+    },
+    {
+      "id": "owner-chat-003",
+      "sessionNo": "PUPY-CH-240903",
+      "type": "owner",
+      "title": "唐梨 × 叶澄 · 主人聊天",
+      "participants": [
+        "唐梨",
+        "叶澄"
+      ],
+      "relatedPets": [
+        "可颂",
+        "泡芙"
+      ],
+      "city": "上海",
+      "status": "待回复",
+      "unreadCount": 3,
+      "latestSnippet": "我把体检记录发你，你方便看下吗？",
+      "messages": [
+        {
+          "id": "owner-chat-003-msg-1",
+          "senderName": "唐梨",
+          "role": "owner",
+          "content": "我把最近的体检记录整理好了。",
+          "createdAt": "2026-04-08T15:42:15.123Z",
+          "moderationStatus": "正常"
+        },
+        {
+          "id": "owner-chat-003-msg-2",
+          "senderName": "叶澄",
+          "role": "owner",
+          "content": "收到，我今晚会认真看。",
+          "createdAt": "2026-04-08T16:42:15.123Z",
+          "moderationStatus": "正常"
+        },
+        {
+          "id": "owner-chat-003-msg-3",
+          "senderName": "唐梨",
+          "role": "owner",
+          "content": "也想顺便聊聊主粮换粮计划。",
+          "createdAt": "2026-04-09T00:42:15.123Z",
+          "moderationStatus": "正常"
+        }
+      ],
+      "createdAt": "2026-04-08T03:42:15.123Z",
+      "updatedAt": "2026-04-09T00:42:15.123Z"
+    },
+    {
+      "id": "pet-chat-003",
+      "sessionNo": "PUPY-PC-240903",
+      "type": "pet",
+      "title": "栗子 × 七喜 · 宠物私语",
+      "participants": [
+        "栗子",
+        "七喜"
+      ],
+      "relatedPets": [
+        "栗子",
+        "七喜"
+      ],
+      "city": "杭州",
+      "status": "待审核展示",
+      "unreadCount": 0,
+      "latestSnippet": "我今天又拍了超多照片。",
+      "messages": [
+        {
+          "id": "pet-chat-003-msg-1",
+          "senderName": "栗子",
+          "role": "pet",
+          "content": "我今天跑得可快了。",
+          "createdAt": "2026-04-08T10:42:15.123Z",
+          "moderationStatus": "正常"
+        },
+        {
+          "id": "pet-chat-003-msg-2",
+          "senderName": "七喜",
+          "role": "pet",
+          "content": "那下次要记得站好让我拍照。",
+          "createdAt": "2026-04-08T18:42:15.123Z",
+          "moderationStatus": "正常"
+        }
+      ],
+      "createdAt": "2026-04-07T23:42:15.123Z",
+      "updatedAt": "2026-04-08T18:42:15.123Z"
+    }
+  ],
+  "updatedAt": "2026-04-09T01:46:09.980Z"
+}

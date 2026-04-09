@@ -22,6 +22,12 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const adminPanelUrl = `${apiService.getBaseUrl()}/api/admin/panel`;
+
+  const openOpsConsole = () => {
+    if (typeof window === 'undefined') return;
+    window.open(adminPanelUrl, '_blank', 'noopener,noreferrer');
+  };
 
   const loadOverview = async () => {
     if (!canAccess) {
@@ -132,6 +138,18 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
               <div className="flex h-14 w-14 items-center justify-center rounded-[1.5rem] bg-white/10 text-emerald-300 backdrop-blur">
                 <span className="material-symbols-outlined text-3xl">monitoring</span>
               </div>
+            </div>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button
+                type="button"
+                onClick={openOpsConsole}
+                className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-900 transition hover:bg-emerald-50"
+              >
+                打开完整管理台
+              </button>
+              <span className="rounded-2xl bg-white/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-white/70">
+                {adminPanelUrl}
+              </span>
             </div>
           </div>
         </motion.section>

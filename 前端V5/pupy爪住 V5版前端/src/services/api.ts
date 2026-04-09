@@ -241,6 +241,15 @@ export interface AdminOverview {
   }>;
 }
 
+export interface AdminRuntimeRealm {
+  id: string;
+  name: string;
+  description: string;
+  onlineCount: number;
+  loadingPhrases: string[];
+  active: boolean;
+}
+
 class ApiService {
   private baseUrl = normalizeBaseUrl(import.meta.env.VITE_API_URL);
   private token: string | null = null;
@@ -644,6 +653,10 @@ class ApiService {
 
   async getAdminOverview() {
     return this.request<AdminOverview>('/api/admin/overview');
+  }
+
+  async getPublicRuntimeConfig() {
+    return this.request<{ realms: AdminRuntimeRealm[] }>('/api/admin/runtime-config/public');
   }
 
   async healthCheck() {
