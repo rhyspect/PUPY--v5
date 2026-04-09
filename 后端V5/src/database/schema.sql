@@ -345,3 +345,17 @@ CREATE TRIGGER update_pet_love_records_updated_at BEFORE UPDATE ON public.pet_lo
 
 DROP TRIGGER IF EXISTS update_chat_sessions_updated_at ON public.chat_sessions;
 CREATE TRIGGER update_chat_sessions_updated_at BEFORE UPDATE ON public.chat_sessions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+GRANT USAGE ON SCHEMA public TO service_role;
+
+GRANT ALL PRIVILEGES ON TABLE
+  public.market_orders,
+  public.market_order_items,
+  public.walk_orders,
+  public.care_bookings,
+  public.pet_love_records,
+  public.chat_sessions,
+  public.chat_session_messages
+TO service_role;
+
+NOTIFY pgrst, 'reload schema';
