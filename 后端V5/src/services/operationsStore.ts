@@ -184,6 +184,51 @@ const toNumber = (value: unknown, fallback = 0) => {
   const next = Number(value);
   return Number.isFinite(next) ? next : fallback;
 };
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function normalizeUuid(value: unknown) {
+  const raw = String(value || '').trim();
+  return UUID_PATTERN.test(raw) ? raw : null;
+}
+
+function normalizeTimestampInput(value: unknown, fallback?: unknown) {
+  const values = [value, fallback];
+  for (const current of values) {
+    const raw = String(current || '').trim();
+    if (!raw) continue;
+
+    const parsed = Date.parse(raw);
+    if (Number.isFinite(parsed)) {
+      return new Date(parsed).toISOString();
+    }
+
+    const explicitTimeMatch = raw.match(/^(今天|明天|后天|周末)\s*(\d{1,2}):(\d{2})$/);
+    if (!explicitTimeMatch) continue;
+
+    const [, label, hourText, minuteText] = explicitTimeMatch;
+    const hour = Number(hourText);
+    const minute = Number(minuteText);
+    if (!Number.isFinite(hour) || !Number.isFinite(minute)) continue;
+
+    const next = new Date();
+    next.setSeconds(0, 0);
+
+    if (label === '明天') {
+      next.setDate(next.getDate() + 1);
+    } else if (label === '后天') {
+      next.setDate(next.getDate() + 2);
+    } else if (label === '周末') {
+      const day = next.getDay();
+      const daysUntilSaturday = (6 - day + 7) % 7 || 7;
+      next.setDate(next.getDate() + daysUntilSaturday);
+    }
+
+    next.setHours(hour, minute, 0, 0);
+    return next.toISOString();
+  }
+
+  return null;
+}
 
 function isMissingOperationsTableError(error: any) {
   return error?.code === 'PGRST205' || String(error?.message || '').includes('schema cache');
@@ -1115,7 +1160,7 @@ export async function saveMarketOrderRecord(payload: Partial<AdminMarketOrder> &
         const { error: insertError } = await supabaseAdmin.from('market_order_items').insert(
           payload.items.map((item) => ({
             order_id: savedId,
-            product_id: item.productId || null,
+            product_id: normalizeUuid(item.productId),
             title: item.title,
             image: item.image || null,
             unit_price: toNumber(item.unitPrice),
@@ -1188,7 +1233,7 @@ export async function saveWalkOrderRecord(payload: Partial<AdminWalkOrder> & { u
       service_zone: payload.serviceZone || existing?.service_zone || null,
       status: payload.status || existing?.status || '待确认',
       review_status: payload.reviewStatus || existing?.review_status || '待审核',
-      scheduled_at: payload.scheduledAt || existing?.scheduled_at || new Date().toISOString(),
+      scheduled_at: normalizeTimestampInput(payload.scheduledAt, existing?.scheduled_at) || new Date().toISOString(),
       duration_minutes: Math.max(30, toNumber(payload.durationMinutes, toNumber(existing?.duration_minutes, 60))),
       price: toNumber(payload.price, toNumber(existing?.price)),
       note: encodeMetaText(payload.note ?? decodeMetaText(existing?.note).text ?? '', noteMeta),
@@ -1261,7 +1306,7 @@ export async function saveCareBookingRecord(payload: Partial<AdminCareBooking> &
       service_name: payload.serviceName || existing?.service_name || '护理服务',
       status: payload.status || existing?.status || '待确认',
       review_status: payload.reviewStatus || existing?.review_status || '待审核',
-      scheduled_at: payload.scheduledAt || existing?.scheduled_at || new Date().toISOString(),
+      scheduled_at: normalizeTimestampInput(payload.scheduledAt, existing?.scheduled_at) || new Date().toISOString(),
       price: toNumber(payload.price, toNumber(existing?.price)),
       note: encodeMetaText(payload.note ?? decodeMetaText(existing?.note).text ?? '', noteMeta),
     };
