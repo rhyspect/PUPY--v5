@@ -118,17 +118,17 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
     <div className="fixed inset-0 z-[180] mx-auto flex max-w-md flex-col bg-surface">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(198,245,223,0.7),transparent_66%),radial-gradient(circle_at_18%_10%,rgba(242,141,45,0.16),transparent_24%),radial-gradient(circle_at_82%_14%,rgba(238,155,177,0.16),transparent_24%)]" />
       <header className="relative z-10 px-5 pt-4">
-        <div className="brand-surface flex items-center gap-4 rounded-[2rem] px-5 py-4">
-          <button onClick={onBack} className="rounded-2xl bg-white/70 p-2 text-slate-500 transition hover:text-primary" aria-label="返回设置">
+        <div className="brand-panel-shell flex items-center gap-4 rounded-[2rem] px-5 py-4">
+          <button onClick={onBack} className="brand-action-secondary rounded-2xl p-2 text-slate-500 transition hover:text-primary" aria-label="返回设置">
             <span className="material-symbols-outlined">arrow_back_ios_new</span>
           </button>
           <div>
             <div className="mb-2">
               <BrandMark mode="lockup" size="sm" subtitle="Admin · Ops Console" />
             </div>
-            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-primary/70">{'\u540e\u53f0'}</p>
+            <p className="brand-section-kicker text-[11px] font-black uppercase">{'\u540e\u53f0\u7ba1\u7406'}</p>
             <h2 className="text-xl font-black tracking-tight text-slate-900">平台运营总览</h2>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">后台管理入口</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">统一运营视图</p>
           </div>
         </div>
       </header>
@@ -140,7 +140,7 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
             <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/50">当前管理员</p>
             <div className="flex items-end justify-between gap-4">
               <div>
-                <h3 className="text-2xl font-black tracking-tight">{'\u5e73\u53f0\u63a7\u5236\u5854'}</h3>
+                <h3 className="text-2xl font-black tracking-tight">{'\u5e73\u53f0\u7ba1\u7406\u53f0'}</h3>
                 <p className="mt-1 text-sm text-white/70">{currentUserEmail || '尚未识别登录账号'}</p>
               </div>
               <div className="flex h-14 w-14 items-center justify-center rounded-[1.5rem] bg-white/10 text-emerald-300 backdrop-blur">
@@ -151,9 +151,10 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
               <button
                 type="button"
                 onClick={openOpsConsole}
-                className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-900 transition hover:bg-emerald-50"
+                className="brand-action-primary flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black transition"
               >
-                打开完整管理台
+                <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                打开管理面板
               </button>
               <span className="rounded-2xl bg-white/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-white/70">
                 {adminPanelUrl}
@@ -199,7 +200,7 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
           <>
             <section className="grid grid-cols-2 gap-4">
               {stats.map((stat) => (
-                <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="frost-card space-y-3 rounded-[1.9rem] p-5">
+                <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="brand-metric-card space-y-3 rounded-[1.9rem] p-5">
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                     <span className="material-symbols-outlined">{stat.icon}</span>
                   </div>
@@ -222,25 +223,25 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="soft-panel rounded-[1.6rem] p-4">
+                <div className="brand-list-row rounded-[1.6rem] p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">环境</p>
                   <p className="mt-2 text-sm font-black text-slate-900">{overview.health.environment}</p>
                 </div>
-                <div className="soft-panel rounded-[1.6rem] p-4">
+                <div className="brand-list-row rounded-[1.6rem] p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">管理员</p>
                   <p className="mt-2 text-sm font-black text-slate-900">{overview.health.adminEmailCount} 个已授权账号</p>
                 </div>
-                <div className="soft-panel col-span-2 rounded-[1.6rem] p-4">
+                <div className="brand-list-row col-span-2 rounded-[1.6rem] p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">API Base</p>
                   <p className="mt-2 break-all text-sm font-black text-slate-900">{overview.health.apiBaseUrl}</p>
                 </div>
-                <div className="soft-panel rounded-[1.6rem] p-4">
+                <div className="brand-list-row rounded-[1.6rem] p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Supabase</p>
                   <p className={`mt-2 text-sm font-black ${overview.health.supabaseConfigured ? 'text-emerald-600' : 'text-red-500'}`}>
                     {overview.health.supabaseConfigured ? '连接正常' : '连接异常'}
                   </p>
                 </div>
-                <div className="soft-panel rounded-[1.6rem] p-4">
+                <div className="brand-list-row rounded-[1.6rem] p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Google AI</p>
                   <p className={`mt-2 text-sm font-black ${overview.health.googleAiConfigured ? 'text-emerald-600' : 'text-amber-500'}`}>
                     {overview.health.googleAiConfigured ? '已启用' : '降级模式'}
@@ -257,7 +258,7 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
               <div className="space-y-3">
                 {overview.recentUsers.length > 0 ? (
                   overview.recentUsers.map((user) => (
-                    <div key={user.id} className="soft-panel rounded-[1.7rem] p-4">
+                    <div key={user.id} className="brand-list-row rounded-[1.7rem] p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="font-black text-slate-900">{user.username}</p>
@@ -283,7 +284,7 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
               <div className="space-y-3">
                 {overview.recentMessages.length > 0 ? (
                   overview.recentMessages.map((message) => (
-                    <div key={message.id} className="soft-panel space-y-2 rounded-[1.7rem] p-4">
+                    <div key={message.id} className="brand-list-row space-y-2 rounded-[1.7rem] p-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
                           {message.sender?.username || '未知'} → {message.receiver?.username || '未知'}
@@ -313,7 +314,7 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
 
                 <div className="grid grid-cols-2 gap-3">
                   {operationStats.map((stat) => (
-                    <div key={stat.label} className="soft-panel space-y-2 rounded-[1.6rem] p-4">
+                    <div key={stat.label} className="brand-list-row space-y-2 rounded-[1.6rem] p-4">
                       <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
                         <span className="material-symbols-outlined text-[20px]">{stat.icon}</span>
                       </div>
@@ -326,7 +327,7 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
                 <div className="space-y-3">
                   {overview.operations.latestChatSessions.length > 0 ? (
                     overview.operations.latestChatSessions.map((session) => (
-                      <div key={session.id} className="soft-panel rounded-[1.7rem] p-4">
+                      <div key={session.id} className="brand-list-row rounded-[1.7rem] p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="font-black text-slate-900">{session.title}</p>

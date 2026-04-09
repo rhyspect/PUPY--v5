@@ -83,15 +83,15 @@ function toMarketCard(item: ApiMarketProduct): MarketCard {
 }
 
 function titleByCategory(category: string) {
-  if (category === 'love') return '配对繁育咨询';
-  if (category === 'walk') return '同城陪伴服务';
-  if (category === 'care') return '护理养护预约';
-  return '主粮用品购物';
+  if (category === 'love') return '配对繁育';
+  if (category === 'walk') return '帮忙溜溜';
+  if (category === 'care') return '护理养护';
+  return '主粮用品';
 }
 
 function descriptionByCategory(category: string) {
   if (category === 'love') return '先私讯沟通健康资料，再发送正式繁育申请。';
-  if (category === 'walk') return '可先联系服务者确认时间、范围和宠物状态。';
+  if (category === 'walk') return '可先联系服务者确认时间、范围和宠物状态，再提交帮忙溜溜服务。';
   if (category === 'care') return '这里是预约商家页，重点是选择护理项目和到店时间。';
   return '这里是购物页，重点是选购数量、加入购物车和完成结算。';
 }
@@ -595,21 +595,21 @@ export default function Market({ onChat, currentUser, userPet }: MarketProps) {
       </section>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="glass ambient-card rounded-[2rem] border border-white/50 p-4 shadow-sm">
+        <div className="brand-metric-card ambient-card rounded-[2rem] p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">当前结果</p>
           <p className="mt-2 text-2xl font-black text-slate-900">{filteredItems.length}</p>
         </div>
-        <div className="glass ambient-card rounded-[2rem] border border-white/50 p-4 shadow-sm">
+        <div className="brand-metric-card ambient-card rounded-[2rem] p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">购物车</p>
           <p className="mt-2 text-2xl font-black text-slate-900">{cartCount}</p>
         </div>
-        <div className="glass ambient-card rounded-[2rem] border border-white/50 p-4 shadow-sm">
+        <div className="brand-metric-card ambient-card rounded-[2rem] p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">订单记录</p>
           <p className="mt-2 text-2xl font-black text-slate-900">{orders.length}</p>
         </div>
       </div>
 
-      <section className="glass ambient-card rounded-[2.6rem] border border-white/50 p-4 shadow-sm">
+      <section className="brand-panel-shell ambient-card rounded-[2.6rem] p-4 shadow-sm">
         <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
           {MARKET_CATEGORIES.map((cat) => {
             const active = activeCategory === cat.id;
@@ -618,7 +618,7 @@ export default function Market({ onChat, currentUser, userPet }: MarketProps) {
                 key={cat.id}
                 type="button"
                 onClick={() => setActiveCategory(cat.id)}
-                className={`flex shrink-0 items-center gap-3 rounded-[1.8rem] px-4 py-3 transition-all ${active ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/75 text-slate-500'}`}
+                className={`flex shrink-0 items-center gap-3 rounded-[1.8rem] px-4 py-3 transition-all ${active ? 'brand-filter-chip-active' : 'brand-filter-chip'}`}
               >
                 <span className="material-symbols-outlined text-lg">{cat.icon}</span>
                 <span className="text-xs font-black tracking-wide">{cat.label}</span>
@@ -628,14 +628,14 @@ export default function Market({ onChat, currentUser, userPet }: MarketProps) {
         </div>
       </section>
 
-      <div className="relative">
+      <div className="brand-panel-shell relative rounded-[2rem] px-1 py-1 shadow-sm">
         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">search</span>
         <input
           type="text"
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder="搜索预约商家、配对档案、主粮或玩具..."
-          className="w-full rounded-[2rem] border border-white/50 bg-white/80 py-4 pl-12 pr-6 text-sm font-medium text-slate-700 shadow-sm outline-none placeholder:text-slate-300 focus:border-primary/30"
+          className="w-full rounded-[1.7rem] border border-white/50 bg-white/80 py-4 pl-12 pr-6 text-sm font-medium text-slate-700 shadow-sm outline-none placeholder:text-slate-300 focus:border-primary/30"
         />
       </div>
 
@@ -647,7 +647,7 @@ export default function Market({ onChat, currentUser, userPet }: MarketProps) {
       )}
 
       {activeCategory === 'supermarket' && cartItems.length > 0 && (
-        <section className="glass ambient-card space-y-4 rounded-[2.8rem] border border-white/50 p-5 shadow-sm">
+        <section className="brand-panel-shell ambient-card space-y-4 rounded-[2.8rem] p-5 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h3 className="text-sm font-black text-slate-900">购物车待结算</h3>
@@ -678,7 +678,8 @@ export default function Market({ onChat, currentUser, userPet }: MarketProps) {
               </div>
             ))}
           </div>
-          <button type="button" onClick={() => void handleCheckoutCart()} className="w-full rounded-[2rem] bg-primary py-4 font-black text-white shadow-lg shadow-primary/20">
+          <button type="button" onClick={() => void handleCheckoutCart()} className="brand-action-primary flex w-full items-center justify-center gap-2 rounded-[2rem] py-4 font-black">
+            <span className="material-symbols-outlined text-[18px]">shopping_cart_checkout</span>
             结算购物车 · {formatAssetPrice(cartTotal)}
           </button>
         </section>
@@ -716,7 +717,8 @@ export default function Market({ onChat, currentUser, userPet }: MarketProps) {
             <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">{titleByCategory(activeCategory)}</h3>
             <p className="mt-1 text-xs text-slate-400">{descriptionByCategory(activeCategory)}</p>
           </div>
-          <button type="button" onClick={() => void loadCategory(activeCategory)} className="rounded-full bg-white/75 px-4 py-2 text-xs font-black text-primary shadow-sm">
+          <button type="button" onClick={() => void loadCategory(activeCategory)} className="brand-action-secondary flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black text-primary shadow-sm">
+            <span className="material-symbols-outlined text-[16px]">refresh</span>
             刷新
           </button>
         </div>
@@ -752,10 +754,12 @@ export default function Market({ onChat, currentUser, userPet }: MarketProps) {
                     ))}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => onChat(item.owner)} className="rounded-[1.2rem] bg-white/75 py-3 text-[11px] font-black text-slate-600 transition-all active:scale-95">
+                    <button type="button" onClick={() => onChat(item.owner)} className="brand-action-secondary flex items-center justify-center gap-2 rounded-[1.2rem] py-3 text-[11px] font-black transition-all active:scale-95">
+                      <span className="material-symbols-outlined text-[16px]">chat</span>
                       私讯咨询
                     </button>
-                    <button type="button" onClick={() => setSelectedItem(item)} className="rounded-[1.2rem] bg-primary/10 py-3 text-[11px] font-black text-primary transition-all active:scale-95 hover:bg-primary hover:text-white">
+                    <button type="button" onClick={() => setSelectedItem(item)} className="flex items-center justify-center gap-2 rounded-[1.2rem] bg-primary/10 py-3 text-[11px] font-black text-primary transition-all active:scale-95 hover:bg-primary hover:text-white">
+                      <span className="material-symbols-outlined text-[16px]">visibility</span>
                       申请详情
                     </button>
                   </div>
@@ -806,12 +810,14 @@ export default function Market({ onChat, currentUser, userPet }: MarketProps) {
                           event.stopPropagation();
                           handleAddToCart(item, 1);
                         }}
-                        className="rounded-2xl bg-primary px-4 py-3 text-[11px] font-black text-white shadow-lg shadow-primary/20"
+                        className="brand-action-primary flex items-center gap-2 rounded-2xl px-4 py-3 text-[11px] font-black"
                       >
+                        <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
                         加购物车
                       </button>
                     ) : activeCategory === 'care' ? (
-                      <button type="button" onClick={(event) => { event.stopPropagation(); setSelectedItem(item); }} className="rounded-2xl bg-amber-50 px-4 py-3 text-[11px] font-black text-amber-600">
+                      <button type="button" onClick={(event) => { event.stopPropagation(); setSelectedItem(item); }} className="flex items-center gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-[11px] font-black text-amber-600">
+                        <span className="material-symbols-outlined text-[16px]">event_available</span>
                         预约商家
                       </button>
                     ) : (
@@ -821,10 +827,11 @@ export default function Market({ onChat, currentUser, userPet }: MarketProps) {
                           event.stopPropagation();
                           onChat(item.owner);
                         }}
-                        className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary"
+                        className="brand-action-secondary flex items-center gap-2 rounded-2xl px-4 py-3 text-[11px] font-black text-primary"
                         aria-label="联系服务者"
                       >
-                        <span className="material-symbols-outlined text-lg">chat</span>
+                        <span className="material-symbols-outlined text-[16px]">chat</span>
+                        联系服务者
                       </button>
                     )}
                   </div>
@@ -877,7 +884,7 @@ export default function Market({ onChat, currentUser, userPet }: MarketProps) {
                 </div>
 
                 <div className="space-y-6 p-8 pt-0">
-                  <div className="soft-panel flex items-center gap-4 rounded-[2rem] border border-white/50 p-5">
+                  <div className="brand-list-row flex items-center gap-4 rounded-[2rem] p-5">
                     <div className="h-12 w-12 overflow-hidden rounded-2xl bg-white shadow-sm">
                       <img src={selectedItem.owner.avatar} className="h-full w-full rounded-2xl object-cover" alt={selectedItem.owner.name} referrerPolicy="no-referrer" />
                     </div>
@@ -963,38 +970,46 @@ export default function Market({ onChat, currentUser, userPet }: MarketProps) {
               <div className="grid grid-cols-2 gap-3 border-t border-white/40 bg-white/60 p-8 pt-4">
                 {selectedItem.kind === 'breeding' ? (
                   <>
-                    <button type="button" onClick={() => onChat(selectedItem.owner)} className="rounded-[2rem] bg-slate-100 py-4 font-black text-slate-700">
+                    <button type="button" onClick={() => onChat(selectedItem.owner)} className="brand-action-secondary flex items-center justify-center gap-2 rounded-[2rem] py-4 font-black text-slate-700">
+                      <span className="material-symbols-outlined text-[18px]">chat</span>
                       私讯咨询
                     </button>
-                    <button type="button" onClick={() => void submitBreedingRequest()} disabled={submitting} className="rounded-[2rem] bg-primary py-4 font-black text-white shadow-lg shadow-primary/20 disabled:opacity-60">
+                    <button type="button" onClick={() => void submitBreedingRequest()} disabled={submitting} className="brand-action-primary flex items-center justify-center gap-2 rounded-[2rem] py-4 font-black disabled:opacity-60">
+                      <span className="material-symbols-outlined text-[18px]">send</span>
                       {submitting ? '提交中…' : '发送申请'}
                     </button>
                   </>
                 ) : selectedItem.kind === 'care' ? (
                   <>
-                    <button type="button" onClick={() => onChat(selectedItem.owner)} className="rounded-[2rem] bg-slate-100 py-4 font-black text-slate-700">
+                    <button type="button" onClick={() => onChat(selectedItem.owner)} className="brand-action-secondary flex items-center justify-center gap-2 rounded-[2rem] py-4 font-black text-slate-700">
+                      <span className="material-symbols-outlined text-[18px]">support_agent</span>
                       联系客服
                     </button>
-                    <button type="button" onClick={() => void handleBookCare(selectedItem)} className="rounded-[2rem] bg-amber-500 py-4 font-black text-white shadow-lg shadow-amber-200">
+                    <button type="button" onClick={() => void handleBookCare(selectedItem)} className="flex items-center justify-center gap-2 rounded-[2rem] bg-amber-500 py-4 font-black text-white shadow-lg shadow-amber-200">
+                      <span className="material-symbols-outlined text-[18px]">event_available</span>
                       确认预约
                     </button>
                   </>
                 ) : selectedItem.kind === 'product' ? (
                   <>
-                    <button type="button" onClick={() => handleAddToCart(selectedItem)} className="rounded-[2rem] bg-slate-100 py-4 font-black text-slate-700">
+                    <button type="button" onClick={() => handleAddToCart(selectedItem)} className="brand-action-secondary flex items-center justify-center gap-2 rounded-[2rem] py-4 font-black text-slate-700">
+                      <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span>
                       加入购物车
                     </button>
-                    <button type="button" onClick={() => void handleCheckoutSelected(selectedItem)} className="rounded-[2rem] bg-primary py-4 font-black text-white shadow-lg shadow-primary/20">
+                    <button type="button" onClick={() => void handleCheckoutSelected(selectedItem)} className="brand-action-primary flex items-center justify-center gap-2 rounded-[2rem] py-4 font-black">
+                      <span className="material-symbols-outlined text-[18px]">payments</span>
                       立即结算
                     </button>
                   </>
                 ) : (
                   <>
-                    <button type="button" onClick={() => onChat(selectedItem.owner)} className="rounded-[2rem] bg-slate-100 py-4 font-black text-slate-700">
+                    <button type="button" onClick={() => onChat(selectedItem.owner)} className="brand-action-secondary flex items-center justify-center gap-2 rounded-[2rem] py-4 font-black text-slate-700">
+                      <span className="material-symbols-outlined text-[18px]">chat</span>
                       私讯咨询
                     </button>
-                    <button type="button" onClick={() => void handleConfirmWalkService(selectedItem)} className="rounded-[2rem] bg-primary py-4 font-black text-white shadow-lg shadow-primary/20">
-                      确认服务
+                    <button type="button" onClick={() => void handleConfirmWalkService(selectedItem)} className="brand-action-primary flex items-center justify-center gap-2 rounded-[2rem] py-4 font-black">
+                      <span className="material-symbols-outlined text-[18px]">pets</span>
+                      确认帮忙溜溜
                     </button>
                   </>
                 )}

@@ -251,7 +251,7 @@ export const REALMS: Realm[] = [
 
 export const MARKET_CATEGORIES = [
   { id: 'care', label: '护理养护', icon: 'health_and_safety' },
-  { id: 'walk', label: '同城陪伴', icon: 'directions_walk' },
+  { id: 'walk', label: '帮忙溜溜', icon: 'directions_walk' },
   { id: 'love', label: '配对繁育', icon: 'favorite' },
   { id: 'supermarket', label: '主粮用品', icon: 'shopping_basket' },
 ];
