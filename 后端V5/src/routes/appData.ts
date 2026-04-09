@@ -4,6 +4,20 @@ import AppDataService from '../services/appDataService.js';
 
 const router = Express.Router();
 
+router.get('/diary-summary', authMiddleware, async (req: AuthRequest, res: Express.Response) => {
+  try {
+    if (!req.user?.user_id) {
+      return res.status(401).json({ success: false, error: 'Unauthorized.', code: 401 });
+    }
+
+    const result = await AppDataService.getDiarySummary(req.user.user_id);
+    res.status(result.success ? 200 : (result.code || 400)).json(result);
+  } catch (error) {
+    console.error('Get app diary summary error:', error);
+    res.status(500).json({ success: false, error: 'Server error.', code: 500 });
+  }
+});
+
 router.get('/member-assets', authMiddleware, async (req: AuthRequest, res: Express.Response) => {
   try {
     if (!req.user?.user_id) {

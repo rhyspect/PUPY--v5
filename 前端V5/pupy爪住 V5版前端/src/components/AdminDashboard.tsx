@@ -106,6 +106,16 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
       ]
     : [];
 
+  const operationStats = overview?.operations
+    ? [
+        { label: '商城订单', value: overview.operations.marketOrders, icon: 'shopping_cart' },
+        { label: '遛遛订单', value: overview.operations.walkOrders, icon: 'directions_walk' },
+        { label: '护理预约', value: overview.operations.careBookings, icon: 'content_cut' },
+        { label: '宠物恋爱', value: overview.operations.petLoveRecords, icon: 'favorite' },
+        { label: '聊天会话', value: overview.operations.chatSessions, icon: 'forum' },
+      ]
+    : [];
+
   return (
     <div className="fixed inset-0 z-[180] mx-auto flex max-w-md flex-col bg-surface">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(198,245,223,0.7),transparent_66%),radial-gradient(circle_at_18%_10%,rgba(242,141,45,0.16),transparent_24%),radial-gradient(circle_at_82%_14%,rgba(238,155,177,0.16),transparent_24%)]" />
@@ -290,6 +300,55 @@ export default function AdminDashboard({ onBack, currentUserEmail, canAccess }: 
                 )}
               </div>
             </section>
+
+            {overview.operations && (
+              <section className="frost-card space-y-5 rounded-[2rem] p-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <span className="material-symbols-outlined">deployed_code</span>
+                  </div>
+                  <div>
+                    <h3 className="font-black text-slate-900">运营工单概况</h3>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Supabase 实时运营数据</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {operationStats.map((stat) => (
+                    <div key={stat.label} className="soft-panel space-y-2 rounded-[1.6rem] p-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
+                        <span className="material-symbols-outlined text-[20px]">{stat.icon}</span>
+                      </div>
+                      <p className="text-xl font-black text-slate-900">{stat.value}</p>
+                      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-3">
+                  {overview.operations.latestChatSessions.length > 0 ? (
+                    overview.operations.latestChatSessions.map((session) => (
+                      <div key={session.id} className="soft-panel rounded-[1.7rem] p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-black text-slate-900">{session.title}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {(session.participants || []).join(' · ') || '暂无参与者'} · {(session.relatedPets || []).join(' / ') || '未关联宠物'}
+                            </p>
+                          </div>
+                          <div className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-600">
+                            {session.status}
+                          </div>
+                        </div>
+                        <p className="mt-3 text-sm leading-relaxed text-slate-600">{session.latestSnippet || '暂无最新内容'}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <EmptyCard title="暂无运营工单" description="订单、预约、恋爱和聊天会话会在这里显示最新动态。" />
+                  )}
+                </div>
+              </section>
+            )}
           </>
         )}
       </div>

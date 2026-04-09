@@ -285,6 +285,18 @@ export interface AdminOverview {
     breedingRequests: number;
     notifications: number;
   };
+  operations?: {
+    marketOrders: number;
+    walkOrders: number;
+    careBookings: number;
+    petLoveRecords: number;
+    chatSessions: number;
+    latestMarketOrders: any[];
+    latestWalkOrders: any[];
+    latestCareBookings: any[];
+    latestPetLoveRecords: any[];
+    latestChatSessions: any[];
+  };
   health: {
     environment: string;
     apiBaseUrl: string;

@@ -1,15 +1,24 @@
-import { randomUUID } from 'crypto';
 import config from '../config/index.js';
 import { supabaseAdmin } from '../config/supabase.js';
 import {
-  getAdminRuntimeConfig,
-  saveAdminRuntimeConfig,
   type AdminCareBooking,
-  type AdminChatMessage,
   type AdminChatSession,
   type AdminMarketOrder,
   type AdminWalkOrder,
 } from './adminRuntimeStore.js';
+import {
+  appendChatSessionMessage,
+  ensureOwnerChatSessionRecord,
+  getDiarySummary,
+  getChatSessionById,
+  listCareBookings,
+  listChatSessions,
+  listMarketOrders,
+  listWalkOrders,
+  saveCareBookingRecord,
+  saveMarketOrderRecord,
+  saveWalkOrderRecord,
+} from './operationsStore.js';
 import type { ApiResponse } from '../types/index.js';
 
 const DEFAULT_OWNER_AVATAR =
@@ -23,7 +32,9 @@ interface ViewerContext {
   username: string;
   residentCity: string;
   avatarUrl: string;
+  petIds: string[];
   petNames: string[];
+  primaryPetId: string | null;
   primaryPetName: string;
   petAvatarUrl: string;
   isAdminViewer: boolean;
@@ -51,6 +62,19 @@ export interface AppChatSessionView extends AdminChatSession {
   counterpart: RuntimeCounterpart;
 }
 
+export interface AppDiarySummary {
+  total: number;
+  totalLikes: number;
+  totalComments: number;
+  latest: {
+    id: string;
+    title?: string;
+    created_at?: string;
+    is_public?: boolean;
+    mood?: string;
+  } | null;
+}
+
 const normalizeText = (value: unknown) => String(value || '').trim().toLowerCase();
 const toNumber = (value: unknown, fallback = 0) => {
   const next = Number(value);
@@ -74,7 +98,7 @@ async function resolveViewerContext(userId: string, fallbackEmail: string, fallb
       .maybeSingle(),
     supabaseAdmin
       .from('pets')
-      .select('name, images')
+      .select('id, name, images')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(12),
@@ -89,8 +113,10 @@ async function resolveViewerContext(userId: string, fallbackEmail: string, fallb
 
   const user = userRes.data;
   const pets = petsRes.data || [];
+  const petIds = uniqueStrings(pets.map((pet) => pet.id));
   const petNames = uniqueStrings(pets.map((pet) => pet.name));
   const primaryPetName = petNames[0] || 'Pupy';
+  const primaryPetId = petIds[0] || null;
   const petAvatarUrl =
     pets.find((pet) => Array.isArray(pet.images) && pet.images.length)?.images?.[0] || DEFAULT_PET_AVATAR;
   const email = String(user?.email || fallbackEmail || '').trim();
@@ -101,7 +127,9 @@ async function resolveViewerContext(userId: string, fallbackEmail: string, fallb
     username: String(user?.username || fallbackUsername || 'PUPY 用户').trim() || 'PUPY 用户',
     residentCity: String(user?.resident_city || '上海').trim() || '上海',
     avatarUrl: String(user?.avatar_url || DEFAULT_OWNER_AVATAR).trim() || DEFAULT_OWNER_AVATAR,
+    petIds,
     petNames,
+    primaryPetId,
     primaryPetName,
     petAvatarUrl,
     isAdminViewer: config.admin.allowedEmails.includes(email.toLowerCase()),
@@ -159,20 +187,31 @@ function hydrateSession(session: AdminChatSession, viewer: ViewerContext): AppCh
 }
 
 export class AppDataService {
+  static async getDiarySummary(userId: string): Promise<ApiResponse<AppDiarySummary>> {
+    try {
+      const summary = await getDiarySummary(userId);
+      return {
+        success: true,
+        data: summary,
+        message: '日记摘要加载成功。',
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || '加载日记摘要失败。',
+        code: 500,
+      };
+    }
+  }
+
   static async getMemberAssets(userId: string, email: string, username: string): Promise<ApiResponse<AppMemberAssets>> {
     try {
-      const viewer = await resolveViewerContext(userId, email, username);
-      const runtime = getAdminRuntimeConfig();
-
-      const marketOrders = sortByLatest(runtime.marketOrders.filter((order) =>
-        recordBelongsToViewer([order.userEmail, order.userName, order.petName], viewer),
-      ));
-      const careBookings = sortByLatest(runtime.careBookings.filter((booking) =>
-        recordBelongsToViewer([booking.userEmail, booking.userName, booking.petName], viewer),
-      ));
-      const walkOrders = sortByLatest(runtime.walkOrders.filter((order) =>
-        recordBelongsToViewer([order.userEmail, order.userName, order.petName], viewer),
-      ));
+      await resolveViewerContext(userId, email, username);
+      const [marketOrders, careBookings, walkOrders] = await Promise.all([
+        listMarketOrders({ userId }),
+        listCareBookings({ userId }),
+        listWalkOrders({ userId }),
+      ]);
 
       return {
         success: true,
@@ -210,10 +249,9 @@ export class AppDataService {
   ): Promise<ApiResponse<AdminMarketOrder>> {
     try {
       const viewer = await resolveViewerContext(userId, email, username);
-      const runtime = getAdminRuntimeConfig();
-      const nextOrder: AdminMarketOrder = {
-        id: randomUUID(),
-        orderNo: `PUPY-MO-${Date.now()}`,
+      const created = await saveMarketOrderRecord({
+        userId: viewer.userId,
+        petId: viewer.primaryPetId,
         userName: viewer.username,
         userEmail: viewer.email,
         petName: viewer.primaryPetName,
@@ -227,15 +265,10 @@ export class AppDataService {
         note: String(payload.note || '').trim(),
         source: String(payload.source || '主粮用品').trim() || '主粮用品',
         items: Array.isArray(payload.items) ? payload.items : [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const saved = saveAdminRuntimeConfig({ marketOrders: [nextOrder, ...runtime.marketOrders] });
-      const created = saved.marketOrders.find((item) => item.id === nextOrder.id) || nextOrder;
+      });
       return {
         success: true,
-        data: created,
+        data: created as AdminMarketOrder,
         message: '商城订单已写入后台审核队列。',
       };
     } catch (error: any) {
@@ -262,10 +295,9 @@ export class AppDataService {
   ): Promise<ApiResponse<AdminCareBooking>> {
     try {
       const viewer = await resolveViewerContext(userId, email, username);
-      const runtime = getAdminRuntimeConfig();
-      const nextBooking: AdminCareBooking = {
-        id: randomUUID(),
-        bookingNo: `PUPY-CR-${Date.now()}`,
+      const created = await saveCareBookingRecord({
+        userId: viewer.userId,
+        petId: viewer.primaryPetId,
         userName: viewer.username,
         userEmail: viewer.email,
         petName: viewer.primaryPetName,
@@ -277,15 +309,10 @@ export class AppDataService {
         scheduledAt: String(payload.scheduledAt || new Date().toISOString()),
         price: toNumber(payload.price),
         note: String(payload.note || '').trim(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const saved = saveAdminRuntimeConfig({ careBookings: [nextBooking, ...runtime.careBookings] });
-      const created = saved.careBookings.find((item) => item.id === nextBooking.id) || nextBooking;
+      });
       return {
         success: true,
-        data: created,
+        data: created as AdminCareBooking,
         message: '护理预约已写入后台审核队列。',
       };
     } catch (error: any) {
@@ -313,10 +340,9 @@ export class AppDataService {
   ): Promise<ApiResponse<AdminWalkOrder>> {
     try {
       const viewer = await resolveViewerContext(userId, email, username);
-      const runtime = getAdminRuntimeConfig();
-      const nextOrder: AdminWalkOrder = {
-        id: randomUUID(),
-        orderNo: `PUPY-WK-${Date.now()}`,
+      const created = await saveWalkOrderRecord({
+        userId: viewer.userId,
+        petId: viewer.primaryPetId,
         userName: viewer.username,
         userEmail: viewer.email,
         petName: viewer.primaryPetName,
@@ -329,15 +355,10 @@ export class AppDataService {
         durationMinutes: Math.max(30, toNumber(payload.durationMinutes, 60)),
         price: toNumber(payload.price),
         note: String(payload.note || '').trim(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const saved = saveAdminRuntimeConfig({ walkOrders: [nextOrder, ...runtime.walkOrders] });
-      const created = saved.walkOrders.find((item) => item.id === nextOrder.id) || nextOrder;
+      });
       return {
         success: true,
-        data: created,
+        data: created as AdminWalkOrder,
         message: '帮忙溜溜订单已写入后台审核队列。',
       };
     } catch (error: any) {
@@ -357,11 +378,13 @@ export class AppDataService {
   ): Promise<ApiResponse<AppChatSessionView[]>> {
     try {
       const viewer = await resolveViewerContext(userId, email, username);
-      const runtime = getAdminRuntimeConfig();
-      const sessions = viewerVisibleSessions(runtime.chatSessions, viewer, type).map((session) => hydrateSession(session, viewer));
+      const sessions = viewer.isAdminViewer
+        ? await listChatSessions({ type })
+        : await listChatSessions(type === 'pet' ? { type, petIds: viewer.petIds } : { type, userId: viewer.userId });
+      const hydrated = viewerVisibleSessions(sessions, viewer, type).map((session) => hydrateSession(session, viewer));
       return {
         success: true,
-        data: sessions,
+        data: hydrated,
         message: type === 'owner' ? '主人聊天会话加载成功。' : '宠物聊天会话加载成功。',
       };
     } catch (error: any) {
@@ -381,13 +404,23 @@ export class AppDataService {
   ): Promise<ApiResponse<AppChatSessionView>> {
     try {
       const viewer = await resolveViewerContext(userId, email, username);
-      const runtime = getAdminRuntimeConfig();
-      const session = runtime.chatSessions.find((item) => item.id === sessionId);
+      const session = await getChatSessionById(sessionId);
       if (!session) {
         return {
           success: false,
           error: '聊天会话不存在。',
           code: 404,
+        };
+      }
+
+      if (
+        !viewer.isAdminViewer &&
+        !recordBelongsToViewer([...session.participants, ...session.relatedPets], viewer)
+      ) {
+        return {
+          success: false,
+          error: '当前会话暂不对你开放。',
+          code: 403,
         };
       }
 
@@ -417,46 +450,19 @@ export class AppDataService {
   ): Promise<ApiResponse<AppChatSessionView>> {
     try {
       const viewer = await resolveViewerContext(userId, email, username);
-      const runtime = getAdminRuntimeConfig();
-      const counterpartName = String(payload.counterpartName || '').trim() || '新朋友';
-      const counterpartPetName = String(payload.counterpartPetName || '').trim();
-      const counterpartCity = String(payload.counterpartCity || viewer.residentCity).trim() || viewer.residentCity;
-
-      const existing = runtime.chatSessions.find((session) => {
-        if (session.type !== 'owner') return false;
-        const participants = session.participants.map(normalizeText);
-        return participants.includes(normalizeText(viewer.username)) && participants.includes(normalizeText(counterpartName));
+      const created = await ensureOwnerChatSessionRecord({
+        viewerUserId: viewer.userId,
+        viewerUsername: viewer.username,
+        viewerPetId: viewer.primaryPetId,
+        viewerPetName: viewer.primaryPetName,
+        viewerCity: viewer.residentCity,
+        counterpartName: String(payload.counterpartName || '').trim() || '新朋友',
+        counterpartCity: String(payload.counterpartCity || viewer.residentCity).trim() || viewer.residentCity,
+        counterpartPetName: String(payload.counterpartPetName || '').trim(),
       });
-
-      if (existing) {
-        return {
-          success: true,
-          data: hydrateSession(existing, viewer),
-          message: '已接入现有主人聊天会话。',
-        };
-      }
-
-      const nextSession: AdminChatSession = {
-        id: randomUUID(),
-        sessionNo: `PUPY-CH-${Date.now()}`,
-        type: 'owner',
-        title: `${viewer.username} × ${counterpartName}`,
-        participants: uniqueStrings([viewer.username, counterpartName]),
-        relatedPets: uniqueStrings([viewer.primaryPetName, counterpartPetName]),
-        city: counterpartCity,
-        status: '热聊中',
-        unreadCount: 0,
-        latestSnippet: '新的主人聊天已经接入。',
-        messages: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const saved = saveAdminRuntimeConfig({ chatSessions: [nextSession, ...runtime.chatSessions] });
-      const created = saved.chatSessions.find((item) => item.id === nextSession.id) || nextSession;
       return {
         success: true,
-        data: hydrateSession(created, viewer),
+        data: hydrateSession(created as AdminChatSession, viewer),
         message: '新的主人聊天会话已创建。',
       };
     } catch (error: any) {
@@ -481,8 +487,7 @@ export class AppDataService {
   ): Promise<ApiResponse<AppChatSessionView>> {
     try {
       const viewer = await resolveViewerContext(userId, email, username);
-      const runtime = getAdminRuntimeConfig();
-      const existing = runtime.chatSessions.find((item) => item.id === sessionId);
+      const existing = await getChatSessionById(sessionId);
       if (!existing) {
         return {
           success: false,
@@ -491,31 +496,17 @@ export class AppDataService {
         };
       }
 
-      const nextMessage: AdminChatMessage = {
-        id: randomUUID(),
+      const updated = await appendChatSessionMessage(sessionId, {
         senderName:
           String(payload.senderName || '').trim() ||
           (payload.role === 'pet' ? viewer.primaryPetName : viewer.username),
         role: payload.role === 'pet' ? 'pet' : 'owner',
         content: String(payload.content || '').trim(),
-        createdAt: new Date().toISOString(),
         moderationStatus: '正常',
-      };
-
-      const nextSession: AdminChatSession = {
-        ...existing,
-        latestSnippet: nextMessage.content,
-        unreadCount: 0,
-        messages: [...existing.messages, nextMessage],
-        updatedAt: new Date().toISOString(),
-      };
-
-      const nextSessions = runtime.chatSessions.map((item) => (item.id === existing.id ? nextSession : item));
-      const saved = saveAdminRuntimeConfig({ chatSessions: nextSessions });
-      const updated = saved.chatSessions.find((item) => item.id === existing.id) || nextSession;
+      });
       return {
         success: true,
-        data: hydrateSession(updated, viewer),
+        data: hydrateSession(updated as AdminChatSession, viewer),
         message: '消息已写入后台会话。',
       };
     } catch (error: any) {

@@ -197,6 +197,32 @@ export interface AdminOverview {
     breedingRequests: number;
     notifications: number;
   };
+  operations?: {
+    marketOrders: number;
+    walkOrders: number;
+    careBookings: number;
+    petLoveRecords: number;
+    chatSessions: number;
+    latestMarketOrders: AppRuntimeMarketOrder[];
+    latestWalkOrders: AppRuntimeWalkOrder[];
+    latestCareBookings: AppRuntimeCareBooking[];
+    latestPetLoveRecords: Array<{
+      id: string;
+      petAName: string;
+      petBName: string;
+      ownerAName: string;
+      ownerBName: string;
+      city: string;
+      status: string;
+      reviewStatus: string;
+      romanceStage: string;
+      compatibilityScore: number;
+      note?: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    latestChatSessions: AppRuntimeChatSession[];
+  };
   health: {
     environment: string;
     apiBaseUrl: string;
@@ -347,6 +373,19 @@ export interface AppRuntimeChatSession {
   createdAt: string;
   updatedAt: string;
   counterpart: AppRuntimeChatCounterpart;
+}
+
+export interface AppDiarySummary {
+  total: number;
+  totalLikes: number;
+  totalComments: number;
+  latest: {
+    id: string;
+    title?: string;
+    created_at?: string;
+    is_public?: boolean;
+    mood?: string;
+  } | null;
 }
 
 class ApiService {
@@ -754,6 +793,10 @@ class ApiService {
     return this.request<AppMemberAssets>('/api/app/member-assets');
   }
 
+  async getAppDiarySummary() {
+    return this.request<AppDiarySummary>('/api/app/diary-summary');
+  }
+
   async createAppMarketOrder(payload: {
     title: string;
     image?: string;
@@ -861,6 +904,5 @@ class ApiService {
 
 export const apiService = new ApiService();
 export default apiService;
-
 
 

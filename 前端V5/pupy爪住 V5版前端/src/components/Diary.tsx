@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { ApiDiaryRecord } from '../services/api';
+import type { ApiDiaryRecord, AppDiarySummary } from '../services/api';
 import apiService from '../services/api';
 import BrandMark from './BrandMark';
 
@@ -42,6 +42,7 @@ function getStoredPetId() {
 
 export default function Diary({ onBack }: DiaryProps) {
   const [entries, setEntries] = useState<ApiDiaryRecord[]>([]);
+  const [summary, setSummary] = useState<AppDiarySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,11 +54,16 @@ export default function Diary({ onBack }: DiaryProps) {
     setLoading(true);
     setError(null);
     try {
-      const result = await apiService.getUserDiaries(1, 12);
+      const [result, summaryResult] = await Promise.all([
+        apiService.getUserDiaries(1, 12),
+        apiService.getAppDiarySummary(),
+      ]);
       setEntries(result.data || []);
+      setSummary(summaryResult.data || null);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : '加载日记失败');
       setEntries([]);
+      setSummary(null);
     } finally {
       setLoading(false);
     }
@@ -75,6 +81,18 @@ export default function Diary({ onBack }: DiaryProps) {
       const result = await apiService.createDiary(petId, form.title.trim(), form.content.trim(), undefined, form.mood, ['日记'], false);
       if (result.data) {
         setEntries((prev) => [result.data as ApiDiaryRecord, ...prev]);
+        setSummary((prev) => ({
+          total: (prev?.total || 0) + 1,
+          totalLikes: prev?.totalLikes || 0,
+          totalComments: prev?.totalComments || 0,
+          latest: {
+            id: result.data.id,
+            title: result.data.title,
+            created_at: result.data.created_at,
+            is_public: result.data.is_public,
+            mood: result.data.mood,
+          },
+        }));
       }
       setForm({ title: '', content: '', mood: '治愈' });
       setShowComposer(false);
@@ -122,7 +140,7 @@ export default function Diary({ onBack }: DiaryProps) {
             </div>
             <div className="rounded-[1.8rem] bg-white/70 px-4 py-3 text-right shadow-sm">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">记录总数</p>
-              <p className="mt-1 text-2xl font-black text-slate-900">{entries.length}</p>
+              <p className="mt-1 text-2xl font-black text-slate-900">{summary?.total ?? entries.length}</p>
             </div>
           </div>
         </section>

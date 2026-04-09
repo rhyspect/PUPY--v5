@@ -14,6 +14,21 @@ import {
   type AdminRuntimeRealm,
   type AdminWalkOrder,
 } from './adminRuntimeStore.js';
+import {
+  countOperationTables,
+  getOperationHighlights,
+  listCareBookings,
+  listChatSessions,
+  listMarketOrders,
+  listPetLoveRecords,
+  listWalkOrders,
+  paginateRows,
+  saveCareBookingRecord,
+  saveChatSessionRecord,
+  saveMarketOrderRecord,
+  savePetLoveRecordRecord,
+  saveWalkOrderRecord,
+} from './operationsStore.js';
 import type { AdminOverview, ApiResponse, PaginatedResponse, SafeUser } from '../types/index.js';
 
 const SAFE_USER_FIELDS = `
@@ -202,6 +217,8 @@ export class AdminService {
         products,
         breedingRequests,
         notifications,
+        operationCounts,
+        operationHighlights,
         recentUsersRes,
         recentPetsRes,
         recentMessagesRes,
@@ -214,6 +231,8 @@ export class AdminService {
         countRows('market_products'),
         countRows('breeding_requests'),
         countRows('notifications'),
+        countOperationTables(),
+        getOperationHighlights(),
         supabaseAdmin
           .from('users')
           .select('id, username, email, resident_city, is_verified, created_at, last_login')
@@ -243,6 +262,18 @@ export class AdminService {
             products,
             breedingRequests,
             notifications,
+          },
+          operations: {
+            marketOrders: operationCounts.market_orders,
+            walkOrders: operationCounts.walk_orders,
+            careBookings: operationCounts.care_bookings,
+            petLoveRecords: operationCounts.pet_love_records,
+            chatSessions: operationCounts.chat_sessions,
+            latestMarketOrders: operationHighlights.latestMarketOrders,
+            latestWalkOrders: operationHighlights.latestWalkOrders,
+            latestCareBookings: operationHighlights.latestCareBookings,
+            latestPetLoveRecords: operationHighlights.latestPetLoveRecords,
+            latestChatSessions: operationHighlights.latestChatSessions,
           },
           health: {
             environment: config.nodeEnv,
@@ -967,34 +998,8 @@ export class AdminService {
 
   static async getMarketOrders(page = 1, limit = 20, keyword = '', status = ''): Promise<PaginatedResponse<AdminMarketOrder>> {
     try {
-      const runtime = getAdminRuntimeConfig();
-      let rows = sortByLatest(runtime.marketOrders);
-      const normalizedKeyword = keyword.trim().toLowerCase();
-
-      if (normalizedKeyword) {
-        rows = rows.filter((order) =>
-          [
-            order.orderNo,
-            order.userName,
-            order.userEmail,
-            order.petName,
-            order.sellerName,
-            order.city,
-            order.note,
-            order.source,
-            ...(order.items || []).map((item) => item.title),
-          ].some((value) => includesKeyword(value, normalizedKeyword)),
-        );
-      }
-
-      if (status.trim()) {
-        rows = rows.filter(
-          (order) =>
-            order.status === status || order.paymentStatus === status || order.fulfillmentStatus === status,
-        );
-      }
-
-      const result = paginateLocalRows(rows, page, limit);
+      const rows = await listMarketOrders({ keyword, status });
+      const result = paginateRows(rows, page, limit);
       return {
         success: true,
         data: result.data,
@@ -1013,35 +1018,12 @@ export class AdminService {
 
   static async saveMarketOrder(payload: Partial<AdminMarketOrder>, actorEmail = 'system', orderId?: string): Promise<ApiResponse<AdminMarketOrder>> {
     try {
-      const runtime = getAdminRuntimeConfig();
-      const existing = runtime.marketOrders.find((item) => item.id === orderId || item.id === payload.id);
-      const nextOrder: AdminMarketOrder = {
-        id: orderId || payload.id || randomUUID(),
-        orderNo: payload.orderNo || existing?.orderNo || `PUPY-MO-${Date.now()}`,
-        userName: payload.userName || existing?.userName || '未命名用户',
-        userEmail: payload.userEmail || existing?.userEmail || '',
-        petName: payload.petName || existing?.petName || '未命名宠物',
-        sellerName: payload.sellerName || existing?.sellerName || '未命名商家',
-        city: payload.city || existing?.city || '未填写城市',
-        status: payload.status || existing?.status || '待处理',
-        paymentStatus: payload.paymentStatus || existing?.paymentStatus || '待付款',
-        fulfillmentStatus: payload.fulfillmentStatus || existing?.fulfillmentStatus || '待发货',
-        total: Number(payload.total ?? existing?.total ?? 0),
-        quantity: Number(payload.quantity ?? existing?.quantity ?? 1),
-        note: payload.note ?? existing?.note ?? '',
-        source: payload.source || existing?.source || '主粮用品',
-        items: Array.isArray(payload.items) && payload.items.length ? payload.items : existing?.items || [],
-        createdAt: existing?.createdAt || payload.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      const nextOrders = upsertRuntimeEntity(runtime.marketOrders, nextOrder);
-      const saved = saveAdminRuntimeConfig({ marketOrders: nextOrders });
-      const data = saved.marketOrders.find((item) => item.id === nextOrder.id) || nextOrder;
-      createActivity(actorEmail, existing ? 'update' : 'create', 'market_order', `${existing ? '更新' : '创建'}了商城订单 ${data.orderNo}。`, data.id);
+      const data = await saveMarketOrderRecord(payload, orderId || payload.id);
+      createActivity(actorEmail, orderId || payload.id ? 'update' : 'create', 'market_order', `${orderId || payload.id ? '更新' : '创建'}了商城订单 ${data?.orderNo || ''}。`, data?.id);
       return {
         success: true,
-        data,
-        message: existing ? '商城订单已更新。' : '商城订单已创建。',
+        data: data as AdminMarketOrder,
+        message: orderId || payload.id ? '商城订单已更新。' : '商城订单已创建。',
       };
     } catch (error: any) {
       return {
@@ -1054,23 +1036,8 @@ export class AdminService {
 
   static async getWalkOrders(page = 1, limit = 20, keyword = '', status = ''): Promise<PaginatedResponse<AdminWalkOrder>> {
     try {
-      const runtime = getAdminRuntimeConfig();
-      let rows = sortByLatest(runtime.walkOrders);
-      const normalizedKeyword = keyword.trim().toLowerCase();
-
-      if (normalizedKeyword) {
-        rows = rows.filter((order) =>
-          [order.orderNo, order.userName, order.userEmail, order.petName, order.walkerName, order.city, order.serviceZone, order.note].some((value) =>
-            includesKeyword(value, normalizedKeyword),
-          ),
-        );
-      }
-
-      if (status.trim()) {
-        rows = rows.filter((order) => order.status === status || order.reviewStatus === status);
-      }
-
-      const result = paginateLocalRows(rows, page, limit);
+      const rows = await listWalkOrders({ keyword, status });
+      const result = paginateRows(rows, page, limit);
       return {
         success: true,
         data: result.data,
@@ -1089,34 +1056,12 @@ export class AdminService {
 
   static async saveWalkOrder(payload: Partial<AdminWalkOrder>, actorEmail = 'system', orderId?: string): Promise<ApiResponse<AdminWalkOrder>> {
     try {
-      const runtime = getAdminRuntimeConfig();
-      const existing = runtime.walkOrders.find((item) => item.id === orderId || item.id === payload.id);
-      const nextOrder: AdminWalkOrder = {
-        id: orderId || payload.id || randomUUID(),
-        orderNo: payload.orderNo || existing?.orderNo || `PUPY-WK-${Date.now()}`,
-        userName: payload.userName || existing?.userName || '未命名用户',
-        userEmail: payload.userEmail || existing?.userEmail || '',
-        petName: payload.petName || existing?.petName || '未命名宠物',
-        walkerName: payload.walkerName || existing?.walkerName || '待分配遛遛师',
-        city: payload.city || existing?.city || '未填写城市',
-        serviceZone: payload.serviceZone || existing?.serviceZone || '待分配服务范围',
-        status: payload.status || existing?.status || '待确认',
-        reviewStatus: payload.reviewStatus || existing?.reviewStatus || '待审核',
-        scheduledAt: payload.scheduledAt || existing?.scheduledAt || new Date().toISOString(),
-        durationMinutes: Number(payload.durationMinutes ?? existing?.durationMinutes ?? 60),
-        price: Number(payload.price ?? existing?.price ?? 0),
-        note: payload.note ?? existing?.note ?? '',
-        createdAt: existing?.createdAt || payload.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      const nextOrders = upsertRuntimeEntity(runtime.walkOrders, nextOrder);
-      const saved = saveAdminRuntimeConfig({ walkOrders: nextOrders });
-      const data = saved.walkOrders.find((item) => item.id === nextOrder.id) || nextOrder;
-      createActivity(actorEmail, existing ? 'update' : 'create', 'walk_order', `${existing ? '更新' : '创建'}了帮忙溜溜订单 ${data.orderNo}。`, data.id);
+      const data = await saveWalkOrderRecord(payload, orderId || payload.id);
+      createActivity(actorEmail, orderId || payload.id ? 'update' : 'create', 'walk_order', `${orderId || payload.id ? '更新' : '创建'}了帮忙溜溜订单 ${data?.orderNo || ''}。`, data?.id);
       return {
         success: true,
-        data,
-        message: existing ? '帮忙溜溜订单已更新。' : '帮忙溜溜订单已创建。',
+        data: data as AdminWalkOrder,
+        message: orderId || payload.id ? '帮忙溜溜订单已更新。' : '帮忙溜溜订单已创建。',
       };
     } catch (error: any) {
       return {
@@ -1129,23 +1074,8 @@ export class AdminService {
 
   static async getCareBookings(page = 1, limit = 20, keyword = '', status = ''): Promise<PaginatedResponse<AdminCareBooking>> {
     try {
-      const runtime = getAdminRuntimeConfig();
-      let rows = sortByLatest(runtime.careBookings);
-      const normalizedKeyword = keyword.trim().toLowerCase();
-
-      if (normalizedKeyword) {
-        rows = rows.filter((booking) =>
-          [booking.bookingNo, booking.userName, booking.userEmail, booking.petName, booking.merchantName, booking.city, booking.serviceName, booking.note].some((value) =>
-            includesKeyword(value, normalizedKeyword),
-          ),
-        );
-      }
-
-      if (status.trim()) {
-        rows = rows.filter((booking) => booking.status === status || booking.reviewStatus === status);
-      }
-
-      const result = paginateLocalRows(rows, page, limit);
+      const rows = await listCareBookings({ keyword, status });
+      const result = paginateRows(rows, page, limit);
       return {
         success: true,
         data: result.data,
@@ -1164,33 +1094,12 @@ export class AdminService {
 
   static async saveCareBooking(payload: Partial<AdminCareBooking>, actorEmail = 'system', bookingId?: string): Promise<ApiResponse<AdminCareBooking>> {
     try {
-      const runtime = getAdminRuntimeConfig();
-      const existing = runtime.careBookings.find((item) => item.id === bookingId || item.id === payload.id);
-      const nextBooking: AdminCareBooking = {
-        id: bookingId || payload.id || randomUUID(),
-        bookingNo: payload.bookingNo || existing?.bookingNo || `PUPY-CR-${Date.now()}`,
-        userName: payload.userName || existing?.userName || '未命名用户',
-        userEmail: payload.userEmail || existing?.userEmail || '',
-        petName: payload.petName || existing?.petName || '未命名宠物',
-        merchantName: payload.merchantName || existing?.merchantName || '未命名商家',
-        city: payload.city || existing?.city || '未填写城市',
-        serviceName: payload.serviceName || existing?.serviceName || '护理服务',
-        status: payload.status || existing?.status || '待确认',
-        reviewStatus: payload.reviewStatus || existing?.reviewStatus || '待审核',
-        scheduledAt: payload.scheduledAt || existing?.scheduledAt || new Date().toISOString(),
-        price: Number(payload.price ?? existing?.price ?? 0),
-        note: payload.note ?? existing?.note ?? '',
-        createdAt: existing?.createdAt || payload.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      const nextBookings = upsertRuntimeEntity(runtime.careBookings, nextBooking);
-      const saved = saveAdminRuntimeConfig({ careBookings: nextBookings });
-      const data = saved.careBookings.find((item) => item.id === nextBooking.id) || nextBooking;
-      createActivity(actorEmail, existing ? 'update' : 'create', 'care_booking', `${existing ? '更新' : '创建'}了护理预约 ${data.bookingNo}。`, data.id);
+      const data = await saveCareBookingRecord(payload, bookingId || payload.id);
+      createActivity(actorEmail, bookingId || payload.id ? 'update' : 'create', 'care_booking', `${bookingId || payload.id ? '更新' : '创建'}了护理预约 ${data?.bookingNo || ''}。`, data?.id);
       return {
         success: true,
-        data,
-        message: existing ? '护理预约已更新。' : '护理预约已创建。',
+        data: data as AdminCareBooking,
+        message: bookingId || payload.id ? '护理预约已更新。' : '护理预约已创建。',
       };
     } catch (error: any) {
       return {
@@ -1203,23 +1112,8 @@ export class AdminService {
 
   static async getPetLoveRecords(page = 1, limit = 20, keyword = '', status = ''): Promise<PaginatedResponse<AdminPetLoveRecord>> {
     try {
-      const runtime = getAdminRuntimeConfig();
-      let rows = sortByLatest(runtime.petLoveRecords);
-      const normalizedKeyword = keyword.trim().toLowerCase();
-
-      if (normalizedKeyword) {
-        rows = rows.filter((record) =>
-          [record.petAName, record.petBName, record.ownerAName, record.ownerBName, record.city, record.note, record.romanceStage].some((value) =>
-            includesKeyword(value, normalizedKeyword),
-          ),
-        );
-      }
-
-      if (status.trim()) {
-        rows = rows.filter((record) => record.status === status || record.reviewStatus === status);
-      }
-
-      const result = paginateLocalRows(rows, page, limit);
+      const rows = await listPetLoveRecords({ keyword, status });
+      const result = paginateRows(rows, page, limit);
       return {
         success: true,
         data: result.data,
@@ -1238,31 +1132,12 @@ export class AdminService {
 
   static async savePetLoveRecord(payload: Partial<AdminPetLoveRecord>, actorEmail = 'system', recordId?: string): Promise<ApiResponse<AdminPetLoveRecord>> {
     try {
-      const runtime = getAdminRuntimeConfig();
-      const existing = runtime.petLoveRecords.find((item) => item.id === recordId || item.id === payload.id);
-      const nextRecord: AdminPetLoveRecord = {
-        id: recordId || payload.id || randomUUID(),
-        petAName: payload.petAName || existing?.petAName || '宠物 A',
-        petBName: payload.petBName || existing?.petBName || '宠物 B',
-        ownerAName: payload.ownerAName || existing?.ownerAName || '主人 A',
-        ownerBName: payload.ownerBName || existing?.ownerBName || '主人 B',
-        city: payload.city || existing?.city || '未填写城市',
-        status: payload.status || existing?.status || '待匹配',
-        reviewStatus: payload.reviewStatus || existing?.reviewStatus || '待审核',
-        romanceStage: payload.romanceStage || existing?.romanceStage || '资料互看中',
-        compatibilityScore: Number(payload.compatibilityScore ?? existing?.compatibilityScore ?? 0.75),
-        note: payload.note ?? existing?.note ?? '',
-        createdAt: existing?.createdAt || payload.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      const nextRecords = upsertRuntimeEntity(runtime.petLoveRecords, nextRecord);
-      const saved = saveAdminRuntimeConfig({ petLoveRecords: nextRecords });
-      const data = saved.petLoveRecords.find((item) => item.id === nextRecord.id) || nextRecord;
-      createActivity(actorEmail, existing ? 'update' : 'create', 'pet_love_record', `${existing ? '更新' : '创建'}了宠物恋爱记录。`, data.id);
+      const data = await savePetLoveRecordRecord(payload, recordId || payload.id);
+      createActivity(actorEmail, recordId || payload.id ? 'update' : 'create', 'pet_love_record', `${recordId || payload.id ? '更新' : '创建'}了宠物恋爱记录。`, data?.id);
       return {
         success: true,
-        data,
-        message: existing ? '宠物恋爱记录已更新。' : '宠物恋爱记录已创建。',
+        data: data as AdminPetLoveRecord,
+        message: recordId || payload.id ? '宠物恋爱记录已更新。' : '宠物恋爱记录已创建。',
       };
     } catch (error: any) {
       return {
@@ -1275,27 +1150,8 @@ export class AdminService {
 
   static async getChatSessions(page = 1, limit = 20, type: 'owner' | 'pet' | '' = '', keyword = '', status = ''): Promise<PaginatedResponse<AdminChatSession>> {
     try {
-      const runtime = getAdminRuntimeConfig();
-      let rows = sortByLatest(runtime.chatSessions);
-      const normalizedKeyword = keyword.trim().toLowerCase();
-
-      if (type) {
-        rows = rows.filter((session) => session.type === type);
-      }
-
-      if (normalizedKeyword) {
-        rows = rows.filter((session) =>
-          [session.sessionNo, session.title, session.city, session.latestSnippet, session.status, ...session.participants, ...session.relatedPets, ...session.messages.map((message) => message.content)].some((value) =>
-            includesKeyword(value, normalizedKeyword),
-          ),
-        );
-      }
-
-      if (status.trim()) {
-        rows = rows.filter((session) => session.status === status);
-      }
-
-      const result = paginateLocalRows(rows, page, limit);
+      const rows = await listChatSessions({ type, keyword, status });
+      const result = paginateRows(rows, page, limit);
       return {
         success: true,
         data: result.data,
@@ -1314,31 +1170,12 @@ export class AdminService {
 
   static async saveChatSession(payload: Partial<AdminChatSession>, actorEmail = 'system', sessionId?: string): Promise<ApiResponse<AdminChatSession>> {
     try {
-      const runtime = getAdminRuntimeConfig();
-      const existing = runtime.chatSessions.find((item) => item.id === sessionId || item.id === payload.id);
-      const nextSession: AdminChatSession = {
-        id: sessionId || payload.id || randomUUID(),
-        sessionNo: payload.sessionNo || existing?.sessionNo || `PUPY-CH-${Date.now()}`,
-        type: payload.type === 'pet' ? 'pet' : existing?.type || 'owner',
-        title: payload.title || existing?.title || '未命名会话',
-        participants: Array.isArray(payload.participants) && payload.participants.length ? payload.participants : existing?.participants || [],
-        relatedPets: Array.isArray(payload.relatedPets) && payload.relatedPets.length ? payload.relatedPets : existing?.relatedPets || [],
-        city: payload.city || existing?.city || '未填写城市',
-        status: payload.status || existing?.status || '待处理',
-        unreadCount: Number(payload.unreadCount ?? existing?.unreadCount ?? 0),
-        latestSnippet: payload.latestSnippet || existing?.latestSnippet || '',
-        messages: Array.isArray(payload.messages) && payload.messages.length ? payload.messages : existing?.messages || [],
-        createdAt: existing?.createdAt || payload.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      const nextSessions = upsertRuntimeEntity(runtime.chatSessions, nextSession);
-      const saved = saveAdminRuntimeConfig({ chatSessions: nextSessions });
-      const data = saved.chatSessions.find((item) => item.id === nextSession.id) || nextSession;
-      createActivity(actorEmail, existing ? 'update' : 'create', 'chat_session', `${existing ? '更新' : '创建'}了${data.type === 'pet' ? '宠物' : '主人'}聊天会话 ${data.sessionNo}。`, data.id);
+      const data = await saveChatSessionRecord(payload, sessionId || payload.id);
+      createActivity(actorEmail, sessionId || payload.id ? 'update' : 'create', 'chat_session', `${sessionId || payload.id ? '更新' : '创建'}了${data?.type === 'pet' ? '宠物' : '主人'}聊天会话 ${data?.sessionNo || ''}。`, data?.id);
       return {
         success: true,
-        data,
-        message: existing ? '聊天会话已更新。' : '聊天会话已创建。',
+        data: data as AdminChatSession,
+        message: sessionId || payload.id ? '聊天会话已更新。' : '聊天会话已创建。',
       };
     } catch (error: any) {
       return {

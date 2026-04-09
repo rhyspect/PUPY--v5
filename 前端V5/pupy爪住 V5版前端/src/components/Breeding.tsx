@@ -33,6 +33,12 @@ type ActionFeedback = {
   body: string;
 };
 
+type BreedingRequestState = {
+  id: string;
+  receiverPetId: string;
+  status: string;
+};
+
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&q=80&w=800';
 
 function getStoredPetId() {
@@ -70,6 +76,7 @@ function toListing(item: ApiMarketProduct): BreedingListing {
 
 export default function Breeding({ onBack, onChat }: BreedingProps) {
   const [listings, setListings] = useState<BreedingListing[]>([]);
+  const [requestsByPetId, setRequestsByPetId] = useState<Record<string, BreedingRequestState>>({});
   const [selected, setSelected] = useState<BreedingListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -82,11 +89,32 @@ export default function Breeding({ onBack, onChat }: BreedingProps) {
     setLoading(true);
     setError(null);
     try {
-      const result = await apiService.getBreedingMarket(1, 20);
+      const [result, requestsResult] = await Promise.all([
+        apiService.getBreedingMarket(1, 20),
+        apiService.getBreedingRequests(1, 50),
+      ]);
       setListings((result.data || []).map(toListing));
+      const nextRequests = Object.fromEntries(
+        ((requestsResult.data || []) as Array<Record<string, any>>)
+          .map((item) => {
+            const receiverPetId = String(item.receiver_pet_id || item.receiver_pet?.id || '').trim();
+            if (!receiverPetId) return null;
+            return [
+              receiverPetId,
+              {
+                id: String(item.id || receiverPetId),
+                receiverPetId,
+                status: String(item.status || 'pending'),
+              } satisfies BreedingRequestState,
+            ];
+          })
+          .filter(Boolean) as Array<[string, BreedingRequestState]>,
+      );
+      setRequestsByPetId(nextRequests);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : '加载繁育档案失败');
       setListings([]);
+      setRequestsByPetId({});
     } finally {
       setLoading(false);
     }
@@ -102,6 +130,15 @@ export default function Breeding({ onBack, onChat }: BreedingProps) {
 
   const submitRequest = async () => {
     if (!selected || submitting) return;
+    const existingRequest = selected.petId ? requestsByPetId[selected.petId] : undefined;
+    if (existingRequest) {
+      setFeedback({
+        tone: 'warning',
+        title: '这条申请已经在后台处理中',
+        body: `当前状态为 ${existingRequest.status}。你可以先私讯沟通，等待后台与对方进一步确认。`,
+      });
+      return;
+    }
     if (!selected.ownerId || !selected.petId || !petId) {
       setFeedback({
         tone: 'warning',
@@ -120,6 +157,14 @@ export default function Breeding({ onBack, onChat }: BreedingProps) {
         title: '繁育申请已发送',
         body: '申请已进入对方待处理列表。你可以继续通过私讯沟通健康记录、见面时间和后续照护责任。',
       });
+      setRequestsByPetId((prev) => ({
+        ...prev,
+        [selected.petId]: {
+          id: selected.id,
+          receiverPetId: selected.petId || '',
+          status: 'pending',
+        },
+      }));
     } catch (requestError) {
       setFeedback({
         tone: 'error',
@@ -136,6 +181,15 @@ export default function Breeding({ onBack, onChat }: BreedingProps) {
     : feedback?.tone === 'warning'
       ? 'border-amber-100 bg-amber-50 text-amber-700'
       : 'border-emerald-100 bg-emerald-50 text-emerald-700';
+
+  const getRequestLabel = (status?: string) => {
+    const normalized = String(status || '').trim().toLowerCase();
+    if (normalized === 'accepted') return '已通过';
+    if (normalized === 'rejected') return '已拒绝';
+    if (normalized === 'completed') return '已完成';
+    if (normalized === 'pending') return '申请处理中';
+    return status || '申请处理中';
+  };
 
   return (
     <div className="fixed inset-0 z-[150] mx-auto flex max-w-md flex-col overflow-y-auto bg-surface no-scrollbar">
@@ -220,6 +274,9 @@ export default function Breeding({ onBack, onChat }: BreedingProps) {
                     <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">{item.petType}</span>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-500">{item.petGender}</span>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-500">{item.status}</span>
+                    {item.petId && requestsByPetId[item.petId] && (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-600">{getRequestLabel(requestsByPetId[item.petId].status)}</span>
+                    )}
                   </div>
                   <p className="line-clamp-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
                   <div className="flex gap-3">
@@ -324,10 +381,10 @@ export default function Breeding({ onBack, onChat }: BreedingProps) {
                   <button
                     type="button"
                     onClick={() => void submitRequest()}
-                    disabled={submitting}
+                    disabled={submitting || Boolean(selected.petId && requestsByPetId[selected.petId])}
                     className="flex-1 rounded-[1.6rem] bg-primary py-4 font-black text-white shadow-lg shadow-primary/20 disabled:opacity-60"
                   >
-                    {submitting ? '发送中…' : '发送申请'}
+                    {submitting ? '发送中…' : selected.petId && requestsByPetId[selected.petId] ? getRequestLabel(requestsByPetId[selected.petId].status) : '发送申请'}
                   </button>
                 </div>
               </div>
