@@ -5,6 +5,8 @@ import apiService from '../services/api';
 import type { Owner, Pet } from '../types';
 import { createOwnerFromApi } from '../utils/adapters';
 import { getStoredLocale, type AppLocale } from '../utils/locale';
+import { PETS } from '../constants';
+import BrandEmptyState from './BrandEmptyState';
 
 interface HomeProps {
   onMatch: (payload?: { owner?: Owner; match?: ApiMatchRecord }) => void;
@@ -22,17 +24,16 @@ const copyByLocale = {
     emptyTitle: '暂无新推荐',
     emptyDescription: '当前附近还没有更合适的档案。',
     retry: '重新探索',
-    rulesTitle: '发现规则',
-    rulesBody: '左滑喜欢，右滑略过。',
-    identityTitle: '当前身份',
-    filters: '筛选偏好',
     likeBadge: '待匹配',
     dislikeBadge: '略过',
     ownerProfile: '查看主人资料',
     detailProfile: '查看详细资料',
+    detailAction: '资料',
     pendingHint: '等待系统双向确认',
     likeAria: '喜欢当前卡片',
     dislikeAria: '跳过当前卡片',
+    likeAction: '喜欢配对',
+    dislikeAction: '先看看别的',
     sendLikeFailed: '发送喜欢失败，请稍后重试。',
     discoverFailed: '发现页加载失败。',
     typeFallback: '宠物伙伴',
@@ -45,17 +46,16 @@ const copyByLocale = {
     emptyTitle: 'No new recommendations right now',
     emptyDescription: 'There are no stronger candidates nearby at the moment. Check back later.',
     retry: 'Refresh discovery',
-    rulesTitle: 'Discovery rules',
-    rulesBody: 'Swipe left to like and enter pending matching. The system will not show a direct match instantly. Swipe right to skip with no heart or match.',
-    identityTitle: 'Current identity',
-    filters: 'Filters',
     likeBadge: 'Pending',
     dislikeBadge: 'Skip',
     ownerProfile: 'View owner profile',
     detailProfile: 'View full profile',
+    detailAction: 'Profile',
     pendingHint: 'Real profile waiting for two-way system confirmation',
     likeAria: 'Like current card',
     dislikeAria: 'Skip current card',
+    likeAction: 'Like',
+    dislikeAction: 'Skip',
     sendLikeFailed: 'Failed to send like. Please try again.',
     discoverFailed: 'Failed to load discovery.',
     typeFallback: 'Pet companion',
@@ -81,6 +81,43 @@ function normalizeCandidate(candidate: ApiDiscoveryPet, locale: AppLocale): Disc
     owner,
     ownerId: candidate.owner?.id,
     raw: candidate,
+  };
+}
+
+function createDemoUser(owner: Owner, index: number): ApiUser {
+  return {
+    id: owner.id || `demo-owner-${index + 1}`,
+    username: owner.name,
+    email: owner.email || `demo-owner-${index + 1}@pupy.local`,
+    age: owner.age,
+    gender: owner.gender,
+    resident_city: owner.residentCity,
+    frequent_cities: owner.frequentCities,
+    hobbies: owner.hobbies,
+    mbti: owner.mbti,
+    signature: owner.signature,
+    avatar_url: owner.avatar,
+    photos: owner.photos,
+    is_verified: true,
+  };
+}
+
+function createDemoDiscoveryCard(pet: Pet, index: number): DiscoveryCard {
+  const owner = createDemoUser(pet.owner, index);
+  return {
+    ...pet,
+    ownerId: undefined,
+    raw: {
+      id: pet.id,
+      user_id: owner.id,
+      name: pet.name,
+      type: pet.type,
+      gender: pet.gender,
+      personality: pet.personality,
+      breed: pet.type,
+      images: pet.images,
+      owner,
+    },
   };
 }
 
@@ -131,10 +168,18 @@ export default function Home({ onMatch, onViewOwner, currentUser, userPet }: Hom
     setError(null);
     try {
       const result = await apiService.getDiscoverPets(userPet.type, userPet.gender, 24);
-      setCards((result.data || []).map((candidate) => normalizeCandidate(candidate, locale)));
+      const apiCards = (result.data || []).map((candidate) => normalizeCandidate(candidate, locale));
+      setCards(apiCards.length ? apiCards : PETS.map(createDemoDiscoveryCard));
+      if (!apiCards.length) {
+        setError('当前 Supabase 推荐池为空，已切换到本地样本卡片供测试左滑右滑。');
+      }
     } catch (requestError) {
-      setCards([]);
-      setError(requestError instanceof Error ? requestError.message : copy.discoverFailed);
+      setCards(PETS.map(createDemoDiscoveryCard));
+      setError(
+        requestError instanceof Error
+          ? `${requestError.message}。已加载本地样本卡片供测试。`
+          : `${copy.discoverFailed} 已加载本地样本卡片供测试。`,
+      );
     } finally {
       setLoading(false);
     }
@@ -204,35 +249,23 @@ export default function Home({ onMatch, onViewOwner, currentUser, userPet }: Hom
 
   if (!cards.length) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center space-y-4 px-10 text-center">
-        <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
-          <span className="material-symbols-outlined text-4xl text-slate-300">travel_explore</span>
-        </div>
-        <h3 className="text-xl font-bold text-slate-800">{copy.emptyTitle}</h3>
-        <p className="text-sm leading-relaxed text-slate-400">{error || copy.emptyDescription}</p>
-        <button type="button" onClick={() => void loadDiscovery()} className="rounded-2xl bg-primary px-8 py-3 font-bold text-white shadow-lg shadow-primary/20 transition-transform active:scale-95">
-          {copy.retry}
-        </button>
+      <div className="flex h-[60vh] items-center justify-center px-6">
+        <BrandEmptyState
+          icon="travel_explore"
+          title={copy.emptyTitle}
+          description={error || copy.emptyDescription}
+          actionLabel={copy.retry}
+          onAction={() => void loadDiscovery()}
+          className="w-full max-w-sm"
+        />
       </div>
     );
   }
 
   return (
     <div className="relative flex min-h-[76vh] flex-col items-center px-6">
-      <div className="mb-5 grid w-full grid-cols-2 gap-3" aria-live="polite">
-        <div className="glass rounded-[2rem] border border-white/50 px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{copy.rulesTitle}</p>
-          <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-700">{copy.rulesBody}</p>
-        </div>
-        <div className="glass rounded-[2rem] border border-white/50 px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{copy.identityTitle}</p>
-          <p className="mt-2 text-sm font-semibold text-slate-700">{currentUser?.username || userPet.owner.name} · {userPet.name}</p>
-          <p className="mt-1 text-xs text-slate-400">{copy.filters}: {userPet.type} / {userPet.gender}</p>
-        </div>
-      </div>
-
       {error && (
-        <div className="mb-4 w-full rounded-[1.6rem] border border-amber-100 bg-amber-50/90 px-4 py-3 text-sm font-semibold text-amber-700">
+        <div className="brand-inline-notice mb-4 w-full rounded-[1.6rem] px-4 py-3 text-sm font-semibold text-amber-700">
           {error}
         </div>
       )}
@@ -295,8 +328,9 @@ export default function Home({ onMatch, onViewOwner, currentUser, userPet }: Hom
                     </div>
                   </button>
 
-                  <button type="button" onClick={() => onViewOwner(pet.owner)} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20 transition-transform active:scale-90" aria-label={`${copy.detailProfile}: ${pet.owner.name}`}>
+                  <button type="button" onClick={() => onViewOwner(pet.owner)} className="brand-action-primary flex h-10 items-center justify-center gap-1.5 rounded-2xl px-3 text-white transition-transform active:scale-90" aria-label={`${copy.detailProfile}: ${pet.owner.name}`}>
                     <span className="material-symbols-outlined text-xl">visibility</span>
+                    <span className="text-[10px] font-black">{copy.detailAction}</span>
                   </button>
                 </div>
 
@@ -320,25 +354,31 @@ export default function Home({ onMatch, onViewOwner, currentUser, userPet }: Hom
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center justify-center gap-8 pb-6">
-        <button
-          type="button"
-          onClick={() => void swipe('like')}
-          disabled={isSubmitting || !topCard}
-          aria-label={topCard ? `${copy.likeAria}: ${topCard.name}` : copy.likeAria}
-          className="flex h-20 w-20 items-center justify-center rounded-[2.2rem] bg-primary text-white shadow-2xl shadow-primary/30 transition-all hover:scale-105 hover:shadow-primary/40 active:scale-90 disabled:opacity-60"
-        >
-          <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => void swipe('dislike')}
-          disabled={!topCard}
-          aria-label={topCard ? `${copy.dislikeAria}: ${topCard.name}` : copy.dislikeAria}
-          className="flex h-16 w-16 items-center justify-center rounded-[2rem] border border-slate-100 bg-white text-red-400 shadow-xl transition-all hover:scale-105 hover:bg-red-50 active:scale-90 disabled:opacity-60"
-        >
-          <span className="material-symbols-outlined text-3xl">close</span>
-        </button>
+      <div className="flex items-start justify-center gap-8 pb-6">
+        <div className="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void swipe('like')}
+            disabled={isSubmitting || !topCard}
+            aria-label={topCard ? `${copy.likeAria}: ${topCard.name}` : copy.likeAria}
+            className="brand-action-primary flex h-20 w-20 items-center justify-center rounded-[2.2rem] transition-all hover:scale-105 active:scale-90 disabled:opacity-60"
+          >
+            <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+          </button>
+          <span className="text-[11px] font-black tracking-wide text-primary/80">{copy.likeAction}</span>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void swipe('dislike')}
+            disabled={!topCard}
+            aria-label={topCard ? `${copy.dislikeAria}: ${topCard.name}` : copy.dislikeAria}
+            className="brand-action-secondary flex h-16 w-16 items-center justify-center rounded-[2rem] text-red-400 transition-all hover:scale-105 active:scale-90 disabled:opacity-60"
+          >
+            <span className="material-symbols-outlined text-3xl">close</span>
+          </button>
+          <span className="text-[11px] font-black tracking-wide text-slate-400">{copy.dislikeAction}</span>
+        </div>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Owner } from '../types';
 
@@ -8,6 +9,9 @@ interface OwnerProfileProps {
 }
 
 export default function OwnerProfile({ owner, onClose, onStartChat }: OwnerProfileProps) {
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [feedback, setFeedback] = useState('可以查看主人资料，也可以直接发起对话。');
+
   return (
     <div className="fixed inset-0 z-[200] flex items-end justify-center">
       <motion.div 
@@ -49,8 +53,17 @@ export default function OwnerProfile({ owner, onClose, onStartChat }: OwnerProfi
                 <h2 className="text-3xl font-black text-slate-900 italic tracking-tight">{owner.name}</h2>
                 <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-md font-black">{owner.mbti}</span>
               </div>
-              <p className="text-slate-400 font-medium text-sm">{owner.signature}</p>
+              <p className="text-slate-400 font-medium text-sm leading-relaxed break-words">{owner.signature}</p>
             </div>
+
+            <motion.div
+              key={feedback}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-[1.6rem] border border-primary/10 bg-primary/5 px-5 py-4 text-xs font-bold leading-relaxed text-primary"
+            >
+              {feedback}
+            </motion.div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-slate-50 p-4 rounded-3xl space-y-1">
@@ -90,8 +103,15 @@ export default function OwnerProfile({ owner, onClose, onStartChat }: OwnerProfi
             )}
 
             <div className="flex gap-4 pt-4">
-              <button className="flex-1 py-5 bg-slate-100 text-slate-900 font-black rounded-3xl active:scale-95 transition-all">
-                关注
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFollowing((value) => !value);
+                  setFeedback(isFollowing ? `已取消关注 ${owner.name}。` : `已在当前资料页标记关注 ${owner.name}。`);
+                }}
+                className={`flex-1 py-5 font-black rounded-3xl active:scale-95 transition-all ${isFollowing ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-900'}`}
+              >
+                {isFollowing ? '已关注' : '关注'}
               </button>
               <button 
                 onClick={onStartChat}

@@ -1,11 +1,26 @@
-﻿import { useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { PETS, REALMS } from '../constants';
+import type { Pet } from '../types';
+import apiService, { type AdminRuntimeRealm } from '../services/api';
 
-export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
+const DEFAULT_CLOUD_LOADING_COPY = [
+  '正在帮[狗狗名字]穿上云端漫步靴...',
+  '[狗狗名字]正兴奋地跑向云端森林...',
+  '正在同步[狗狗名字]的社交嗅觉...',
+  '嗅到了！附近有 12 只熟悉的小伙伴...',
+];
+
+export default function Tour({ onSelectRealm, userPet }: { onSelectRealm: () => void; userPet?: Pet }) {
   const [view, setView] = useState<'map' | 'realms' | 'courtyards'>('map');
   const [showModal, setShowModal] = useState<'create' | 'join' | null>(null);
   const [modalData, setModalData] = useState({ name: '', id: '', password: '' });
+  const [modalFeedback, setModalFeedback] = useState<string | null>(null);
+  const [mapFeedback, setMapFeedback] = useState('附近有 12 位宠物伙伴在线互动');
+  const [cloudEntry, setCloudEntry] = useState<{ phrase: string; target: string } | null>(null);
+  const [runtimeRealms, setRuntimeRealms] = useState<AdminRuntimeRealm[]>([]);
+  const phraseTimerRef = useRef<number | null>(null);
+  const finishTimerRef = useRef<number | null>(null);
   const [courtyards, setCourtyards] = useState([
     {
       id: '1024',
@@ -31,13 +46,27 @@ export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
   ]);
 
   const handleJoin = () => {
-    if (!modalData.id.trim() || !modalData.password.trim()) return;
+    if (!modalData.id.trim() || !modalData.password.trim()) {
+      setModalFeedback('请输入小院编号和进入密码。');
+      return;
+    }
+    const targetCourt = courtyards.find((court) => court.id === modalData.id.trim());
+    if (!targetCourt) {
+      setModalFeedback('没有找到这个小院编号，请检查后再试。');
+      return;
+    }
+    setCourtyards((prev) => prev.map((court) => court.id === targetCourt.id ? { ...court, members: court.members + 1 } : court));
+    setMapFeedback(`已加入 ${targetCourt.name}，可以开始小院交流。`);
     setShowModal(null);
     setModalData({ name: '', id: '', password: '' });
+    setModalFeedback(null);
   };
 
   const handleCreate = () => {
-    if (!modalData.name.trim() || !modalData.password.trim()) return;
+    if (!modalData.name.trim() || !modalData.password.trim()) {
+      setModalFeedback('请输入小院名称和进入密码。');
+      return;
+    }
     const newId = Math.floor(1000 + Math.random() * 9000).toString();
     setCourtyards((prev) => [
       {
@@ -49,8 +78,102 @@ export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
       },
       ...prev,
     ]);
+    setMapFeedback(`已创建 ${modalData.name.trim()}，小院编号 ${newId}。`);
     setShowModal(null);
     setModalData({ name: '', id: '', password: '' });
+    setModalFeedback(null);
+  };
+
+  const petName = userPet?.name || '小狗狗';
+
+  const activeRealms = useMemo(() => {
+    if (!runtimeRealms.length) return REALMS;
+    const runtimeMap = new Map<string, AdminRuntimeRealm>(runtimeRealms.map((realm) => [realm.id, realm]));
+    return REALMS
+      .map((realm) => {
+        const runtime = runtimeMap.get(realm.id);
+        if (!runtime) return realm;
+        return {
+          ...realm,
+          name: runtime.name || realm.name,
+          description: runtime.description || realm.description,
+          onlineCount: Number.isFinite(Number(runtime.onlineCount)) ? Number(runtime.onlineCount) : realm.onlineCount,
+          active: runtime.active,
+        };
+      })
+      .filter((realm) => realm.active !== false);
+  }, [runtimeRealms]);
+
+  const cloudLoadingCopy = useMemo(() => {
+    const merged = runtimeRealms.flatMap((realm) => realm.loadingPhrases || []).filter(Boolean);
+    return merged.length ? merged : DEFAULT_CLOUD_LOADING_COPY;
+  }, [runtimeRealms]);
+
+  const clearCloudTimers = () => {
+    if (phraseTimerRef.current) {
+      window.clearInterval(phraseTimerRef.current);
+      phraseTimerRef.current = null;
+    }
+    if (finishTimerRef.current) {
+      window.clearTimeout(finishTimerRef.current);
+      finishTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => clearCloudTimers, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    const syncRuntimeConfig = async () => {
+      try {
+        const response = await apiService.getPublicRuntimeConfig();
+        if (!alive) return;
+        const realms = response.data?.realms || [];
+        if (realms.length) {
+          setRuntimeRealms(realms);
+          const totalOnline = realms.reduce((sum, realm) => sum + (Number.isFinite(Number(realm.onlineCount)) ? Number(realm.onlineCount) : 0), 0);
+          if (totalOnline > 0) {
+            setMapFeedback(`云游地图已同步，当前有 ${totalOnline} 位宠物伙伴在线互动`);
+          }
+        }
+      } catch {
+        // Fall back to local defaults when the public runtime config is unavailable.
+      }
+    };
+
+    void syncRuntimeConfig();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const randomCloudCopy = () =>
+    cloudLoadingCopy[Math.floor(Math.random() * cloudLoadingCopy.length)].replace('[狗狗名字]', petName);
+
+  const startCloudEntry = (target: string) => {
+    if (cloudEntry) return;
+    clearCloudTimers();
+    setCloudEntry({ phrase: randomCloudCopy(), target });
+    phraseTimerRef.current = window.setInterval(() => {
+      setCloudEntry((current) => (current ? { ...current, phrase: randomCloudCopy() } : current));
+    }, 720);
+    finishTimerRef.current = window.setTimeout(() => {
+      clearCloudTimers();
+      setCloudEntry(null);
+      onSelectRealm();
+    }, 3000);
+  };
+
+  const openCourtModal = (mode: 'create' | 'join') => {
+    setModalFeedback(null);
+    setShowModal(mode);
+  };
+
+  const refreshMap = () => {
+    const onlineCount = 8 + Math.floor(Math.random() * 10);
+    setMapFeedback(`地图已刷新，附近有 ${onlineCount} 位宠物伙伴在线互动`);
   };
 
   return (
@@ -60,7 +183,7 @@ export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
         <p className="text-slate-500 font-medium tracking-tight">把地图、主题空间和小院社群做成更沉浸的轻社交入口</p>
       </section>
 
-      <div className="mx-auto flex max-w-[320px] justify-center rounded-[2rem] bg-slate-100 p-1">
+      <div className="brand-segment-shell mx-auto flex max-w-[320px] justify-center rounded-[2rem] p-1" role="tablist" aria-label="云游空间分区切换">
         {[
           { key: 'map', label: '云端地图' },
           { key: 'realms', label: '主题空间' },
@@ -69,8 +192,10 @@ export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
           <button
             key={item.key}
             type="button"
+            role="tab"
+            aria-selected={view === item.key}
             onClick={() => setView(item.key as 'map' | 'realms' | 'courtyards')}
-            className={`flex-1 rounded-[1.8rem] py-3 text-[10px] font-black transition-all ${view === item.key ? 'bg-white text-primary shadow-lg' : 'text-slate-400'}`}
+            className={`flex-1 rounded-[1.8rem] py-3 text-[10px] font-black transition-all ${view === item.key ? 'brand-segment-active' : 'brand-segment-idle'}`}
           >
             {item.label}
           </button>
@@ -105,7 +230,7 @@ export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
                 className="absolute"
                 style={{ top: `${20 + index * 25}%`, left: `${20 + (index % 2) * 40}%` }}
               >
-                <button type="button" className="relative group" onClick={onSelectRealm} aria-label={`查看 ${pet.name} 的空间`}>
+                <button type="button" className="relative group" onClick={() => startCloudEntry(`${pet.name} 的云端空间`)} aria-label={`查看 ${pet.name} 的空间`}>
                   <div className="w-16 h-16 rounded-2xl bg-white p-1 shadow-xl ring-4 ring-emerald-500/20 transition-transform group-hover:scale-110">
                     <img src={pet.images?.[0]} alt={pet.name} className="h-full w-full rounded-xl object-cover" referrerPolicy="no-referrer" />
                   </div>
@@ -122,13 +247,14 @@ export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
               <div className="h-8 w-8 rounded-full border-4 border-white bg-primary shadow-2xl" />
             </div>
 
-            <div className="absolute bottom-8 left-8 right-8 rounded-[2rem] border border-white/50 bg-white/80 p-4 shadow-xl backdrop-blur-md">
+            <div className="brand-panel-shell absolute bottom-8 left-8 right-8 rounded-[2rem] p-4 shadow-xl backdrop-blur-md">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary">near_me</span>
-                  <span className="text-xs font-black tracking-tight text-slate-900">附近有 12 位宠物伙伴在线互动</span>
+                  <span className="text-xs font-black leading-relaxed tracking-tight text-slate-900">{mapFeedback}</span>
                 </div>
-                <button type="button" className="text-[10px] font-black uppercase tracking-widest text-primary">
+                <button type="button" onClick={refreshMap} className="brand-action-secondary flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary">
+                  <span className="material-symbols-outlined text-[15px]">refresh</span>
                   刷新地图
                 </button>
               </div>
@@ -138,13 +264,13 @@ export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
 
         {view === 'realms' && (
           <motion.div key="realms" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="grid grid-cols-1 gap-6">
-            {REALMS.map((realm) => (
+            {activeRealms.map((realm) => (
               <motion.button
                 key={realm.id}
                 type="button"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={onSelectRealm}
+                onClick={() => startCloudEntry(realm.name)}
                 className="group relative h-64 overflow-hidden rounded-[3rem] border-4 border-white shadow-2xl"
               >
                 <img src={realm.image} alt={realm.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
@@ -172,11 +298,17 @@ export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
         {view === 'courtyards' && (
           <motion.div key="courtyards" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
             <div className="flex gap-3">
-              <button type="button" onClick={() => setShowModal('create')} className="flex-1 rounded-[2.5rem] border-2 border-dashed border-primary/30 bg-primary/10 py-6 font-black text-primary transition hover:bg-primary/15">
-                创建小院
+              <button type="button" onClick={() => openCourtModal('create')} className="brand-panel-shell flex-1 rounded-[2.5rem] py-6 font-black text-primary transition hover:bg-primary/15">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="material-symbols-outlined text-2xl">add_home_work</span>
+                  <span>创建小院</span>
+                </div>
               </button>
-              <button type="button" onClick={() => setShowModal('join')} className="flex-1 rounded-[2.5rem] border-2 border-dashed border-slate-200 bg-slate-100 py-6 font-black text-slate-500 transition hover:bg-slate-200">
-                加入小院
+              <button type="button" onClick={() => openCourtModal('join')} className="brand-list-row flex-1 rounded-[2.5rem] py-6 font-black text-slate-500 transition hover:bg-slate-200">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="material-symbols-outlined text-2xl">group_add</span>
+                  <span>加入小院</span>
+                </div>
               </button>
             </div>
 
@@ -192,8 +324,8 @@ export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
                       <span className="text-[9px] font-bold text-slate-300">ID: {court.id}</span>
                     </div>
                   </div>
-                  <button type="button" onClick={() => setShowModal('join')} className="rounded-full bg-slate-900 px-4 py-2 text-[10px] font-black text-white transition hover:bg-primary">
-                    加入
+                  <button type="button" onClick={() => { setModalData((prev) => ({ ...prev, id: court.id })); openCourtModal('join'); }} className="brand-action-dark rounded-full px-4 py-2 text-[10px] font-black transition">
+                    加入小院
                   </button>
                 </div>
               ))}
@@ -203,6 +335,61 @@ export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
       </AnimatePresence>
 
       <AnimatePresence>
+        {cloudEntry && (
+          <div className="fixed inset-0 z-[260] flex items-center justify-center bg-emerald-950/70 px-6 backdrop-blur-xl">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              className="relative w-full max-w-md overflow-hidden rounded-[3.2rem] border border-white/15 bg-white/90 p-8 shadow-2xl"
+            >
+              <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,rgba(175,251,216,0.75),transparent_68%)]" />
+              <div className="relative space-y-8">
+                <div className="text-center">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-primary/70">Cloud leash release</p>
+                  <h3 className="mt-3 text-3xl font-black italic tracking-tight text-slate-900">{petName} 正在进入{cloudEntry.target}</h3>
+                  <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-500">牵引绳已松开，云端地图正在生成安全游玩轨迹。</p>
+                </div>
+
+                <div className="relative mx-auto h-52 overflow-hidden rounded-[2.6rem] bg-gradient-to-br from-emerald-100 via-sky-100 to-white">
+                  <motion.div
+                    initial={{ scaleX: 0.2 }}
+                    animate={{ scaleX: [0.2, 1, 0.2] }}
+                    transition={{ duration: 1.4, repeat: Infinity }}
+                    className="absolute left-10 top-24 h-1 w-44 origin-left rounded-full bg-emerald-500/40"
+                  />
+                  <motion.div
+                    initial={{ x: -10, y: 70, rotate: -12 }}
+                    animate={{ x: 210, y: 30, rotate: 12 }}
+                    transition={{ duration: 2.4, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
+                    className="absolute left-6 top-14 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white text-primary shadow-2xl ring-8 ring-white/50"
+                  >
+                    <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>pets</span>
+                  </motion.div>
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0.4 }}
+                    animate={{ scale: [0.8, 1.4, 0.8], opacity: [0.3, 0.9, 0.3] }}
+                    transition={{ duration: 1.2, repeat: Infinity }}
+                    className="absolute right-10 top-16 h-20 w-20 rounded-full border-2 border-dashed border-primary/40"
+                  />
+                  <div className="absolute bottom-5 left-5 right-5 rounded-[1.8rem] bg-white/75 px-5 py-4 backdrop-blur-md">
+                    <p className="text-sm font-black leading-relaxed text-primary">{cloudEntry.phrase}</p>
+                  </div>
+                </div>
+
+                <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                  <motion.div
+                    initial={{ width: '8%' }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 3, ease: 'easeInOut' }}
+                    className="h-full rounded-full bg-primary"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {showModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center px-6">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(null)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -230,11 +417,22 @@ export default function Tour({ onSelectRealm }: { onSelectRealm: () => void }) {
                 </label>
               </div>
 
+              {modalFeedback && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-bold leading-relaxed text-amber-700"
+                >
+                  {modalFeedback}
+                </motion.div>
+              )}
+
               <div className="mt-6 flex gap-3">
-                <button type="button" onClick={() => setShowModal(null)} className="flex-1 rounded-2xl bg-slate-100 py-4 font-black text-slate-500">
+                <button type="button" onClick={() => { setShowModal(null); setModalFeedback(null); }} className="brand-action-secondary flex-1 rounded-2xl py-4 font-black text-slate-500">
                   取消
                 </button>
-                <button type="button" onClick={showModal === 'create' ? handleCreate : handleJoin} className="flex-1 rounded-2xl bg-primary py-4 font-black text-white shadow-lg shadow-primary/20">
+                <button type="button" onClick={showModal === 'create' ? handleCreate : handleJoin} className="brand-action-primary flex flex-1 items-center justify-center gap-2 rounded-2xl py-4 font-black">
+                  <span className="material-symbols-outlined text-[18px]">{showModal === 'create' ? 'add_home_work' : 'login'}</span>
                   确认{showModal === 'create' ? '创建' : '加入'}
                 </button>
               </div>

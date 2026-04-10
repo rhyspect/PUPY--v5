@@ -3,6 +3,7 @@ import type { BootstrapOnboardingRequest, LoginRequest, RegisterRequest } from '
 import { AuthRequest, authMiddleware } from '../middleware/authMiddleware.js';
 import AuthService from '../services/authService.js';
 import PetService from '../services/petService.js';
+import { isImageDataUrl, uploadImageDataUrl, uploadImageList } from '../services/uploadService.js';
 import { validateEmail, validatePassword, validateUsername } from '../utils/validators.js';
 
 const router = Express.Router();
@@ -86,6 +87,8 @@ router.post('/bootstrap', async (req: Express.Request, res: Express.Response) =>
 
     const user = registerResult.data.user;
     const userId = user.id;
+    const ownerPhotos = await uploadImageList(userId, owner.photos?.length ? owner.photos : owner.avatar ? [owner.avatar] : [], 'owners');
+    const petImages = await uploadImageList(userId, pet.images || [], 'pets');
 
     const updateResult = await AuthService.updateUser(userId, {
       username,
@@ -96,7 +99,8 @@ router.post('/bootstrap', async (req: Express.Request, res: Express.Response) =>
       hobbies: owner.hobbies || [],
       mbti: owner.mbti,
       signature: owner.signature,
-      avatar_url: owner.photos?.[0] || owner.avatar,
+      avatar_url: ownerPhotos[0] || owner.photos?.[0] || owner.avatar,
+      photos: ownerPhotos.length ? ownerPhotos : owner.photos || [],
       bio: owner.signature,
     });
 
@@ -112,7 +116,7 @@ router.post('/bootstrap', async (req: Express.Request, res: Express.Response) =>
       breed: pet.type || '\u5ba0\u7269\u4f19\u4f34',
       age: null,
       weight: null,
-      images: pet.images || [],
+      images: petImages.length ? petImages : pet.images || [],
       bio: `${pet.name || '\u65b0\u670b\u53cb'} \u5df2\u5b8c\u6210\u5efa\u6863\uff0c\u51c6\u5907\u5f00\u59cb\u65b0\u7684\u793e\u4ea4\u65c5\u7a0b\u3002`,
     });
 
@@ -163,7 +167,25 @@ router.put('/me', authMiddleware, async (req: AuthRequest, res: Express.Response
       return res.status(401).json({ success: false, error: '\u672a\u6388\u6743\u8bbf\u95ee\u3002', code: 401 });
     }
 
-    const result = await AuthService.updateUser(req.user.user_id, req.body);
+    const updates = { ...(req.body as Record<string, unknown>) };
+    if (typeof updates.avatar_url === 'string' && isImageDataUrl(updates.avatar_url)) {
+      const uploaded = await uploadImageDataUrl({
+        userId: req.user.user_id,
+        dataUrl: updates.avatar_url,
+        fileName: 'owner-avatar',
+        folder: 'owners',
+      });
+      updates.avatar_url = uploaded.url;
+    }
+    if (Array.isArray(updates.photos)) {
+      const nextPhotos = await uploadImageList(req.user.user_id, updates.photos.filter((image): image is string => typeof image === 'string'), 'owners');
+      updates.photos = nextPhotos;
+      if (!updates.avatar_url && nextPhotos[0]) {
+        updates.avatar_url = nextPhotos[0];
+      }
+    }
+
+    const result = await AuthService.updateUser(req.user.user_id, updates);
     res.status(result.success ? 200 : (result.code || 400)).json(result);
   } catch (error) {
     console.error('Update current user error:', error);

@@ -156,6 +156,13 @@ export interface ApiMarketProduct {
   pet?: ApiPetRecord;
 }
 
+export interface ApiUploadAsset {
+  url: string;
+  path: string;
+  bucket: string;
+  contentType: string;
+}
+
 export interface ApiMatchRecord {
   id: string;
   user_a_id: string;
@@ -189,6 +196,32 @@ export interface AdminOverview {
     products: number;
     breedingRequests: number;
     notifications: number;
+  };
+  operations?: {
+    marketOrders: number;
+    walkOrders: number;
+    careBookings: number;
+    petLoveRecords: number;
+    chatSessions: number;
+    latestMarketOrders: AppRuntimeMarketOrder[];
+    latestWalkOrders: AppRuntimeWalkOrder[];
+    latestCareBookings: AppRuntimeCareBooking[];
+    latestPetLoveRecords: Array<{
+      id: string;
+      petAName: string;
+      petBName: string;
+      ownerAName: string;
+      ownerBName: string;
+      city: string;
+      status: string;
+      reviewStatus: string;
+      romanceStage: string;
+      compatibilityScore: number;
+      note?: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    latestChatSessions: AppRuntimeChatSession[];
   };
   health: {
     environment: string;
@@ -232,6 +265,127 @@ export interface AdminOverview {
       username: string;
     };
   }>;
+}
+
+export interface AdminRuntimeRealm {
+  id: string;
+  name: string;
+  description: string;
+  onlineCount: number;
+  loadingPhrases: string[];
+  active: boolean;
+}
+
+export interface AppRuntimeMarketOrderItem {
+  productId: string;
+  title: string;
+  image: string;
+  unitPrice: number;
+  quantity: number;
+}
+
+export interface AppRuntimeMarketOrder {
+  id: string;
+  orderNo: string;
+  userName: string;
+  userEmail: string;
+  petName: string;
+  sellerName: string;
+  city: string;
+  status: string;
+  paymentStatus: string;
+  fulfillmentStatus: string;
+  total: number;
+  quantity: number;
+  note?: string;
+  source: string;
+  items: AppRuntimeMarketOrderItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AppRuntimeWalkOrder {
+  id: string;
+  orderNo: string;
+  userName: string;
+  userEmail: string;
+  petName: string;
+  walkerName: string;
+  city: string;
+  serviceZone: string;
+  status: string;
+  reviewStatus: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  price: number;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AppRuntimeCareBooking {
+  id: string;
+  bookingNo: string;
+  userName: string;
+  userEmail: string;
+  petName: string;
+  merchantName: string;
+  city: string;
+  serviceName: string;
+  status: string;
+  reviewStatus: string;
+  scheduledAt: string;
+  price: number;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AppMemberAssets {
+  marketOrders: AppRuntimeMarketOrder[];
+  careBookings: AppRuntimeCareBooking[];
+  walkOrders: AppRuntimeWalkOrder[];
+}
+
+export interface AppRuntimeChatMessage {
+  id: string;
+  senderName: string;
+  role: 'owner' | 'pet' | 'system';
+  content: string;
+  createdAt: string;
+  moderationStatus: string;
+}
+
+export interface AppRuntimeChatCounterpart extends Partial<ApiUser> {}
+
+export interface AppRuntimeChatSession {
+  id: string;
+  sessionNo: string;
+  type: 'owner' | 'pet';
+  title: string;
+  participants: string[];
+  relatedPets: string[];
+  city: string;
+  status: string;
+  unreadCount: number;
+  latestSnippet: string;
+  messages: AppRuntimeChatMessage[];
+  createdAt: string;
+  updatedAt: string;
+  counterpart: AppRuntimeChatCounterpart;
+}
+
+export interface AppDiarySummary {
+  total: number;
+  totalLikes: number;
+  totalComments: number;
+  latest: {
+    id: string;
+    title?: string;
+    created_at?: string;
+    is_public?: boolean;
+    mood?: string;
+  } | null;
 }
 
 class ApiService {
@@ -359,6 +513,18 @@ class ApiService {
     return this.request<ApiUser>('/api/auth/me', {
       method: 'PUT',
       body: JSON.stringify(updates),
+    });
+  }
+
+  async uploadImage(dataUrl: string, fileName: string, folder: 'owners' | 'pets' | 'diaries' | 'market' | 'uploads' = 'uploads', contentType?: string) {
+    return this.request<ApiUploadAsset>('/api/uploads/image', {
+      method: 'POST',
+      body: JSON.stringify({
+        dataUrl,
+        fileName,
+        folder,
+        contentType,
+      }),
     });
   }
 
@@ -623,8 +789,99 @@ class ApiService {
     });
   }
 
+  async getMemberAssets() {
+    return this.request<AppMemberAssets>('/api/app/member-assets');
+  }
+
+  async getAppDiarySummary() {
+    return this.request<AppDiarySummary>('/api/app/diary-summary');
+  }
+
+  async createAppMarketOrder(payload: {
+    title: string;
+    image?: string;
+    sellerName?: string;
+    total?: number;
+    quantity?: number;
+    note?: string;
+    items?: AppRuntimeMarketOrderItem[];
+    city?: string;
+    source?: string;
+  }) {
+    return this.request<AppRuntimeMarketOrder>('/api/app/market-orders', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async createAppCareBooking(payload: {
+    merchantName?: string;
+    serviceName?: string;
+    scheduledAt?: string;
+    price?: number;
+    note?: string;
+    city?: string;
+  }) {
+    return this.request<AppRuntimeCareBooking>('/api/app/care-bookings', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async createAppWalkOrder(payload: {
+    walkerName?: string;
+    serviceZone?: string;
+    scheduledAt?: string;
+    durationMinutes?: number;
+    price?: number;
+    note?: string;
+    city?: string;
+  }) {
+    return this.request<AppRuntimeWalkOrder>('/api/app/walk-orders', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getAppChatSessions(type: 'owner' | 'pet') {
+    return this.request<AppRuntimeChatSession[]>(`/api/app/chat-sessions?type=${type}`);
+  }
+
+  async getAppChatSession(sessionId: string) {
+    return this.request<AppRuntimeChatSession>(`/api/app/chat-sessions/${sessionId}`);
+  }
+
+  async ensureOwnerChatSession(payload: {
+    counterpartName?: string;
+    counterpartCity?: string;
+    counterpartPetName?: string;
+  }) {
+    return this.request<AppRuntimeChatSession>('/api/app/chat-sessions/ensure-owner', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async sendAppChatMessage(
+    sessionId: string,
+    payload: {
+      content: string;
+      role?: 'owner' | 'pet';
+      senderName?: string;
+    },
+  ) {
+    return this.request<AppRuntimeChatSession>(`/api/app/chat-sessions/${sessionId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   async getAdminOverview() {
     return this.request<AdminOverview>('/api/admin/overview');
+  }
+
+  async getPublicRuntimeConfig() {
+    return this.request<{ realms: AdminRuntimeRealm[] }>('/api/admin/runtime-config/public');
   }
 
   async healthCheck() {
@@ -647,8 +904,5 @@ class ApiService {
 
 export const apiService = new ApiService();
 export default apiService;
-
-
-
 
 

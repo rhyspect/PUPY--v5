@@ -1,199 +1,665 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PUPY 后台数据管理面板</title>
+  <title>PUPY 后台运营管理台</title>
   <style>
     :root {
       color-scheme: light;
-      --bg: #f5f7f3;
-      --card: rgba(255, 255, 255, 0.86);
-      --text: #17221b;
-      --muted: #688070;
-      --line: #dde6dd;
-      --brand: #1f8f63;
-      --brand-soft: #e8f6ef;
-      --warn: #b45309;
+      --bg: #f5f7f4;
+      --bg-soft: #eef5f0;
+      --card: rgba(255, 255, 255, 0.9);
+      --text: #18211d;
+      --muted: #708278;
+      --line: #dbe6dd;
+      --brand: #1c9f67;
+      --brand-strong: #147851;
+      --brand-soft: #e7f6ef;
+      --accent: #f28d2d;
       --danger: #dc2626;
-      --shadow: 0 20px 50px rgba(18, 33, 24, 0.08);
-      --focus: 0 0 0 4px rgba(31, 143, 99, 0.16);
+      --warning: #b45309;
+      --shadow: 0 18px 50px rgba(20, 38, 28, 0.08);
+      --focus: 0 0 0 4px rgba(28, 159, 103, 0.18);
+      --radius-xl: 30px;
+      --radius-lg: 22px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
     }
     * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
     body {
       margin: 0;
-      font-family: "PingFang SC", "SF Pro Display", "SF Pro Text", "Microsoft YaHei", sans-serif;
-      background: radial-gradient(circle at top right, #edf8f1 0, transparent 30%), var(--bg);
       color: var(--text);
+      font-family: "PingFang SC", "SF Pro Display", "SF Pro Text", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(242, 141, 45, 0.10), transparent 24%),
+        radial-gradient(circle at top left, rgba(28, 159, 103, 0.12), transparent 28%),
+        var(--bg);
     }
-    .shell { max-width: 1400px; margin: 0 auto; padding: 32px; }
-    .hero { display:flex; justify-content:space-between; gap:24px; align-items:flex-start; margin-bottom:24px; }
-    .hero h1 { margin:0; font-size:40px; line-height:1; }
-    .hero p { margin:10px 0 0; color: var(--muted); }
+    button, input, select, textarea {
+      font: inherit;
+    }
+    button, input, select, textarea {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      color: var(--text);
+      padding: 13px 15px;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, opacity .18s ease, background .18s ease;
+    }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: none;
+      border-color: rgba(28, 159, 103, 0.42);
+      box-shadow: var(--focus);
+    }
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+    button {
+      cursor: pointer;
+      font-weight: 800;
+    }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .6;
+      transform: none;
+    }
+    .shell {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 430px);
+      gap: 22px;
+      margin-bottom: 22px;
+    }
     .card {
       background: var(--card);
-      border:1px solid rgba(255,255,255,0.75);
-      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: var(--radius-xl);
       box-shadow: var(--shadow);
       backdrop-filter: blur(18px);
     }
-    .login-card, .toolbar, .section { padding: 24px; }
-    .toolbar { display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between; margin-bottom:20px; }
-    .toolbar .actions, .toolbar .filters, .toolbar .keyword-wrap { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    input, button, select {
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 14px 16px;
-      font-size: 14px;
-      background:#fff;
-      transition: box-shadow .18s ease, border-color .18s ease, transform .18s ease, opacity .18s ease;
+    .hero-card, .login-card, .toolbar, .section, .modal-card {
+      padding: 24px;
     }
-    input, select { min-width: 180px; }
-    button { cursor: pointer; font-weight: 700; }
-    button:disabled { cursor: not-allowed; opacity: .6; transform: none; }
-    button:focus-visible, input:focus-visible, select:focus-visible {
-      outline: none;
-      box-shadow: var(--focus);
-      border-color: rgba(31, 143, 99, 0.45);
+    .brand-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand-strong);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
     }
-    .primary { background: var(--brand); color:#fff; border-color: var(--brand); }
-    .ghost { background:#fff; color:var(--text); }
-    .stats { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:16px; margin-bottom:20px; }
-    .stat { padding:20px; }
-    .stat small { color: var(--muted); display:block; margin-bottom:8px; }
-    .stat strong { font-size: 32px; }
-    .tabs { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
-    .tab.active { background: var(--brand); color:#fff; border-color: var(--brand); }
-    table { width:100%; border-collapse: collapse; }
-    th, td { text-align:left; padding:14px 12px; border-bottom:1px solid var(--line); vertical-align: top; font-size:14px; }
-    th { color: var(--muted); font-size:12px; text-transform: uppercase; letter-spacing: .08em; }
-    .pill { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; }
-    .pill.ok { background:#e8f6ef; color: var(--brand); }
-    .pill.pending { background:#fff7ed; color: var(--warn); }
-    .stack { display:grid; gap:16px; }
+    .hero-title {
+      margin: 18px 0 0;
+      font-size: 38px;
+      line-height: 1.02;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+    .hero-desc {
+      margin: 14px 0 0;
+      max-width: 820px;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+    .hero-notes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .note {
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.7);
+      border: 1px solid rgba(255,255,255,.9);
+      padding: 16px;
+    }
+    .note small {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+    .note strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: -.01em;
+    }
+    .stack { display: grid; gap: 14px; }
     .muted { color: var(--muted); }
-    .hidden { display:none !important; }
-    .two-col { display:grid; grid-template-columns: 1.3fr .9fr; gap:20px; }
+    .hidden { display: none !important; }
+    .primary {
+      background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+      border-color: transparent;
+      color: #fff;
+    }
+    .secondary {
+      background: linear-gradient(135deg, #f5a146, #f28d2d);
+      border-color: transparent;
+      color: #fff;
+    }
+    .ghost {
+      background: rgba(255,255,255,.88);
+      color: var(--text);
+    }
+    .danger {
+      background: rgba(220, 38, 38, 0.1);
+      color: var(--danger);
+      border-color: rgba(220, 38, 38, 0.16);
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      background: #f8faf8;
+      border: 1px solid var(--line);
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .chip.ok { background: #e9f8f0; color: var(--brand-strong); border-color: rgba(28,159,103,.12); }
+    .chip.pending { background: #fff7ed; color: var(--warning); border-color: rgba(180,83,9,.12); }
+    .chip.danger { background: #fef2f2; color: var(--danger); border-color: rgba(220,38,38,.12); }
+    .app-shell {
+      display: grid;
+      gap: 20px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .tabs {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.72);
+      font-size: 13px;
+      letter-spacing: .02em;
+    }
+    .tab.active {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+      border-color: transparent;
+      box-shadow: 0 12px 26px rgba(28, 159, 103, 0.2);
+    }
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .section-title {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -.03em;
+      font-weight: 900;
+    }
+    .section-subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .stat {
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(248,251,248,.92));
+      border: 1px solid rgba(255,255,255,.9);
+    }
+    .stat small {
+      display: block;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      font-size: 11px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .stat strong {
+      display: block;
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+    .surface-grid {
+      display: grid;
+      grid-template-columns: 1.3fr .95fr;
+      gap: 18px;
+    }
+    .mini-grid {
+      display: grid;
+      gap: 18px;
+    }
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .content-list {
+      display: grid;
+      gap: 10px;
+    }
+    .list-item {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-item strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+    .toolbar-row,
+    .inline-fields,
+    .form-grid,
+    .table-actions,
+    .split-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .toolbar-row {
+      margin-bottom: 16px;
+      justify-content: space-between;
+    }
+    .toolbar-row .left,
+    .toolbar-row .right {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(219, 230, 221, 0.85);
+      background: rgba(255,255,255,.7);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 960px;
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 15px 14px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    td strong { font-size: 14px; }
+    th {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      font-weight: 900;
+      background: rgba(247, 250, 247, 0.9);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .cell-stack {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+    .cell-stack .sub {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .empty-state,
+    .error-state,
+    .loading-inline {
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+    }
     .empty-state {
       border: 1px dashed var(--line);
-      border-radius: 20px;
-      padding: 28px 20px;
-      text-align: center;
       color: var(--muted);
-      background: rgba(248, 250, 252, 0.8);
+      background: rgba(249, 251, 249, 0.92);
     }
     .error-state {
-      border: 1px dashed rgba(220, 38, 38, 0.22);
-      border-radius: 20px;
-      padding: 28px 20px;
-      text-align: center;
+      border: 1px dashed rgba(220, 38, 38, 0.24);
       color: var(--danger);
-      background: rgba(254, 242, 242, 0.82);
+      background: rgba(254, 242, 242, 0.92);
+      flex-direction: column;
+      gap: 12px;
     }
-    .error-state p { margin: 0 0 14px; }
-    .pagination {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:16px;
-      margin-top:16px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-    .pagination .controls { display:flex; gap:8px; }
     .loading-inline {
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height: 120px;
+      color: var(--muted);
+      background: rgba(249, 251, 249, 0.7);
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .summary-card {
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,248,245,.9));
+      border: 1px solid rgba(255,255,255,.9);
+    }
+    .summary-card small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      margin-bottom: 8px;
+    }
+    .summary-card strong {
+      display: block;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+    .realm-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .realm-card {
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.84);
+      border: 1px solid rgba(255,255,255,.92);
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+    .realm-card h4 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+    }
+    .realm-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+    .field label {
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      color: var(--muted);
+    }
+    .field.inline-check {
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 10px;
+    }
+    .field.inline-check input {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      padding: 0;
+    }
+    .modal-root {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-root.show { display: flex; }
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(16, 24, 20, 0.45);
+      backdrop-filter: blur(12px);
+    }
+    .modal-card {
+      position: relative;
+      width: min(860px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      border-radius: 32px;
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 30px 80px rgba(18, 33, 24, 0.16);
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+    .modal-head h3 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+    .modal-head p {
+      margin: 8px 0 0;
       color: var(--muted);
       font-size: 13px;
+      line-height: 1.6;
     }
-    .toast { position:fixed; right:24px; bottom:24px; background:#15231a; color:#fff; padding:14px 18px; border-radius:16px; box-shadow: var(--shadow); opacity:0; transform: translateY(10px); transition:.2s; }
-    .toast.show { opacity:1; transform: translateY(0); }
+    .modal-form {
+      display: grid;
+      gap: 16px;
+    }
+    .modal-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 140;
+      min-width: 240px;
+      max-width: calc(100vw - 48px);
+      padding: 14px 18px;
+      border-radius: 18px;
+      background: #13211b;
+      color: #fff;
+      box-shadow: 0 22px 50px rgba(19, 33, 27, 0.2);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity .2s ease, transform .2s ease;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
     .visually-hidden {
-      position:absolute;
-      width:1px;
-      height:1px;
-      padding:0;
-      margin:-1px;
-      overflow:hidden;
-      clip:rect(0,0,0,0);
-      white-space:nowrap;
-      border:0;
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
-    @media (max-width: 980px) {
+    @media (max-width: 1180px) {
+      .hero, .surface-grid, .panel-grid, .realm-grid { grid-template-columns: 1fr; }
+      .summary-grid, .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 780px) {
       .shell { padding: 16px; }
-      .stats, .two-col { grid-template-columns: 1fr; }
-      .hero { flex-direction: column; }
-      input, select { min-width: 100%; }
-      .toolbar { align-items: stretch; }
-      .toolbar .actions, .toolbar .filters, .toolbar .keyword-wrap { width: 100%; }
+      .hero-notes, .modal-grid, .summary-grid, .stats-grid { grid-template-columns: 1fr; }
+      .toolbar, .section-header, .toolbar-row { align-items: stretch; }
+      .toolbar-actions, .tabs, .toolbar-row .left, .toolbar-row .right { width: 100%; }
+      input, select, textarea, button { width: 100%; }
+      .modal-footer { flex-direction: column-reverse; }
     }
   </style>
 </head>
 <body>
   <div class="shell">
     <div class="hero">
-      <div>
-        <h1>PUPY 后台数据管理面板</h1>
-        <p>独立于 App 的运营与审核入口。可查看应用核心数据，并审核用户资料。</p>
-      </div>
-      <div class="card login-card" style="min-width:320px;">
-        <div style="font-weight:800; margin-bottom:12px;">管理员登录</div>
-        <div class="stack">
-          <label class="visually-hidden" for="email">管理员邮箱</label>
-          <input id="email" placeholder="请输入管理员邮箱" autocomplete="username" />
-          <label class="visually-hidden" for="password">登录密码</label>
-          <input id="password" type="password" placeholder="请输入登录密码" autocomplete="current-password" />
-          <button id="loginBtn" class="primary">登录后台</button>
-          <div id="loginStatus" class="muted">登录后可查看平台数据与审核信息。</div>
-        </div>
-      </div>
-    </div>
-
-    <div id="app" class="hidden">
-      <div class="card toolbar">
-        <div class="filters">
-          <button type="button" class="tab active" data-tab="overview">总览</button>
-          <button type="button" class="tab" data-tab="users">用户审核</button>
-          <button type="button" class="tab" data-tab="pets">宠物资料</button>
-          <button type="button" class="tab" data-tab="market">市场数据</button>
-          <button type="button" class="tab" data-tab="breeding">繁育请求</button>
-        </div>
-        <div class="actions">
-          <div class="keyword-wrap">
-            <label class="visually-hidden" for="keyword">搜索关键词</label>
-            <input id="keyword" placeholder="搜索用户名或邮箱" />
+      <section class="card hero-card">
+        <span class="brand-eyebrow">PUPY Admin Console</span>
+        <h1 class="hero-title">PUPY 平台运营与数据管理台</h1>
+        <p class="hero-desc">
+          这是一套直接对接现有前后端与 Supabase 数据的后台工作台。你可以在这里管理用户、宠物、爪主集市条目、配对繁育、恋爱匹配、日记审核、消息巡检、通知运营、登录追踪，以及三大云游地图的在线人数与加载短句。
+        </p>
+        <div class="hero-notes">
+          <div class="note">
+            <small>商城与服务</small>
+            <strong>统一管理商家商城、狗粮、主粮用品、护理养护、帮忙溜溜、配对繁育条目</strong>
           </div>
-          <button type="button" id="refreshBtn" class="ghost">刷新数据</button>
-          <button type="button" id="logoutBtn" class="ghost">退出</button>
-        </div>
-      </div>
-
-      <section id="overviewTab" class="tab-panel">
-        <div id="stats" class="stats"></div>
-        <div class="two-col">
-          <div class="card section">
-            <div style="font-weight:800; margin-bottom:16px;">最近注册用户</div>
-            <div id="recentUsers"></div>
+          <div class="note">
+            <small>社交与审核</small>
+            <strong>审核用户与宠物资料，处理繁育申请、恋爱匹配、日记公开状态</strong>
           </div>
-          <div class="stack">
-            <div class="card section">
-              <div style="font-weight:800; margin-bottom:16px;">最近宠物档案</div>
-              <div id="recentPets"></div>
-            </div>
-            <div class="card section">
-              <div style="font-weight:800; margin-bottom:16px;">最近消息</div>
-              <div id="recentMessages"></div>
-            </div>
+          <div class="note">
+            <small>运营配置</small>
+            <strong>实时维护云游地图在线人数、加载短句与后台操作记录</strong>
           </div>
         </div>
       </section>
 
+      <aside class="card login-card">
+        <div class="stack">
+          <div>
+            <div class="brand-eyebrow">管理员登录</div>
+            <h2 style="margin:16px 0 0;font-size:24px;font-weight:900;letter-spacing:-.04em;">安全进入后台</h2>
+            <p class="muted" style="margin:10px 0 0;line-height:1.65;">使用已授权管理员账号登录。系统会校验权限，并同步当前账号下的后台操作能力。</p>
+          </div>
+          <label class="visually-hidden" for="email">管理员邮箱</label>
+          <input id="email" placeholder="请输入管理员邮箱" autocomplete="username" />
+          <label class="visually-hidden" for="password">登录密码</label>
+          <input id="password" type="password" placeholder="请输入登录密码" autocomplete="current-password" />
+          <div class="toolbar-actions">
+            <button id="loginBtn" class="primary">登录后台</button>
+          </div>
+          <div id="loginStatus" class="muted">登录后即可查看完整运营数据与审核面板。</div>
+        </div>
+      </aside>
+    </div>
+
+    <div id="app" class="app-shell hidden">
+      <div class="card toolbar">
+        <div class="tabs">
+          <button type="button" class="tab active" data-tab="overview">总览</button>
+          <button type="button" class="tab" data-tab="users">用户</button>
+          <button type="button" class="tab" data-tab="pets">宠物</button>
+          <button type="button" class="tab" data-tab="market">爪主集市</button>
+          <button type="button" class="tab" data-tab="love">恋爱与繁育</button>
+          <button type="button" class="tab" data-tab="diaries">日记审核</button>
+          <button type="button" class="tab" data-tab="messages">消息巡检</button>
+          <button type="button" class="tab" data-tab="notifications">通知运营</button>
+          <button type="button" class="tab" data-tab="login">登录追踪</button>
+          <button type="button" class="tab" data-tab="realms">云游配置</button>
+        </div>
+        <div class="toolbar-actions">
+          <span id="adminIdentity" class="chip">未识别管理员</span>
+          <button id="refreshBtn" type="button" class="ghost">刷新当前页</button>
+          <button id="logoutBtn" type="button" class="ghost">退出</button>
+        </div>
+      </div>
+
+      <section id="overviewTab" class="tab-panel">
+        <div id="overviewContent"></div>
+      </section>
+
       <section id="usersTab" class="tab-panel hidden">
         <div class="card section">
-          <div style="font-weight:800; margin-bottom:16px;">用户审核列表</div>
+          <div class="section-header">
+            <div>
+              <h3 class="section-title">用户资料与审核</h3>
+              <p class="section-subtitle">查看用户身份、城市、兴趣、最近登录与审核状态，并可直接编辑资料或通过审核。</p>
+            </div>
+          </div>
+          <div class="toolbar-row">
+            <div class="left">
+              <input id="usersKeyword" placeholder="搜索用户名、邮箱、城市" />
+              <button id="usersSearchBtn" type="button" class="ghost">搜索</button>
+            </div>
+          </div>
           <div id="usersTable"></div>
           <div id="usersPagination"></div>
         </div>
@@ -201,7 +667,18 @@
 
       <section id="petsTab" class="tab-panel hidden">
         <div class="card section">
-          <div style="font-weight:800; margin-bottom:16px;">宠物资料</div>
+          <div class="section-header">
+            <div>
+              <h3 class="section-title">宠物资料中心</h3>
+              <p class="section-subtitle">查看主人关联、健康信息、分身状态与图集，并直接维护宠物资料。</p>
+            </div>
+          </div>
+          <div class="toolbar-row">
+            <div class="left">
+              <input id="petsKeyword" placeholder="搜索宠物名称、类型、品种" />
+              <button id="petsSearchBtn" type="button" class="ghost">搜索</button>
+            </div>
+          </div>
           <div id="petsTable"></div>
           <div id="petsPagination"></div>
         </div>
@@ -209,94 +686,472 @@
 
       <section id="marketTab" class="tab-panel hidden">
         <div class="card section">
-          <div style="font-weight:800; margin-bottom:16px;">市场数据</div>
+          <div class="section-header">
+            <div>
+              <h3 class="section-title">爪主集市条目管理</h3>
+              <p class="section-subtitle">统一上传和维护商家商城、狗粮、主粮用品、护理养护、帮忙溜溜、配对繁育等所有集市条目。</p>
+            </div>
+            <div class="toolbar-actions">
+              <button id="createMarketBtn" type="button" class="primary">新建集市条目</button>
+            </div>
+          </div>
+          <div class="toolbar-row">
+            <div class="left">
+              <input id="marketKeyword" placeholder="搜索标题或描述" />
+              <select id="marketCategoryFilter">
+                <option value="">全部分类</option>
+                <option value="supermarket">主粮用品</option>
+                <option value="care">护理养护</option>
+                <option value="walk">帮忙溜溜</option>
+                <option value="love">配对繁育</option>
+              </select>
+              <select id="marketStatusFilter">
+                <option value="">全部状态</option>
+                <option value="active">active</option>
+                <option value="inactive">inactive</option>
+                <option value="sold">sold</option>
+              </select>
+              <button id="marketSearchBtn" type="button" class="ghost">筛选</button>
+            </div>
+          </div>
           <div id="marketTable"></div>
           <div id="marketPagination"></div>
         </div>
+        <div class="panel-grid" style="margin-top:18px;">
+          <div class="card section">
+            <div class="section-header">
+              <div>
+                <h3 class="section-title">商城订单记录</h3>
+                <p class="section-subtitle">维护主粮用品加购、结算、售后与订单履约状态。</p>
+              </div>
+              <div class="toolbar-actions">
+                <button id="createMarketOrderBtn" type="button" class="primary">新建商城订单</button>
+              </div>
+            </div>
+            <div id="marketOrdersTable"></div>
+            <div id="marketOrdersPagination"></div>
+          </div>
+          <div class="card section">
+            <div class="section-header">
+              <div>
+                <h3 class="section-title">帮忙溜溜订单</h3>
+                <p class="section-subtitle">审核遛遛订单、接单状态、遛遛师和服务范围安排。</p>
+              </div>
+              <div class="toolbar-actions">
+                <button id="createWalkOrderBtn" type="button" class="primary">新建遛遛订单</button>
+              </div>
+            </div>
+            <div id="walkOrdersTable"></div>
+            <div id="walkOrdersPagination"></div>
+          </div>
+          <div class="card section">
+            <div class="section-header">
+              <div>
+                <h3 class="section-title">护理预约记录</h3>
+                <p class="section-subtitle">维护到店护理、项目安排、审核状态和门店确认结果。</p>
+              </div>
+              <div class="toolbar-actions">
+                <button id="createCareBookingBtn" type="button" class="primary">新建护理预约</button>
+              </div>
+            </div>
+            <div id="careBookingsTable"></div>
+            <div id="careBookingsPagination"></div>
+          </div>
+        </div>
       </section>
 
-      <section id="breedingTab" class="tab-panel hidden">
+      <section id="loveTab" class="tab-panel hidden">
+        <div class="panel-grid">
+          <div class="card section">
+            <div class="section-header">
+              <div>
+                <h3 class="section-title">繁育请求审核</h3>
+                <p class="section-subtitle">审核、拒绝或完成配对繁育申请，并记录备注。</p>
+              </div>
+            </div>
+            <div class="toolbar-row">
+              <div class="left">
+                <select id="breedingStatusFilter">
+                  <option value="">全部状态</option>
+                  <option value="pending">pending</option>
+                  <option value="accepted">accepted</option>
+                  <option value="rejected">rejected</option>
+                  <option value="completed">completed</option>
+                </select>
+                <button id="breedingSearchBtn" type="button" class="ghost">筛选</button>
+              </div>
+            </div>
+            <div id="breedingTable"></div>
+            <div id="breedingPagination"></div>
+          </div>
+
+          <div class="card section">
+            <div class="section-header">
+              <div>
+                <h3 class="section-title">宠物恋爱匹配</h3>
+                <p class="section-subtitle">查看匹配双方、兼容度与状态，并直接干预匹配结果。</p>
+              </div>
+            </div>
+            <div class="toolbar-row">
+              <div class="left">
+                <select id="matchesStatusFilter">
+                  <option value="">全部状态</option>
+                  <option value="pending">pending</option>
+                  <option value="matched">matched</option>
+                  <option value="rejected">rejected</option>
+                </select>
+                <button id="matchesSearchBtn" type="button" class="ghost">筛选</button>
+              </div>
+            </div>
+            <div id="matchesTable"></div>
+            <div id="matchesPagination"></div>
+          </div>
+          <div class="card section">
+            <div class="section-header">
+              <div>
+                <h3 class="section-title">恋爱运营记录</h3>
+                <p class="section-subtitle">补充前端未落库的宠物恋爱阶段、热度和人工复核结果。</p>
+              </div>
+              <div class="toolbar-actions">
+                <button id="createPetLoveBtn" type="button" class="primary">新建恋爱记录</button>
+              </div>
+            </div>
+            <div id="petLoveTable"></div>
+            <div id="petLovePagination"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="diariesTab" class="tab-panel hidden">
         <div class="card section">
-          <div style="font-weight:800; margin-bottom:16px;">繁育请求</div>
-          <div id="breedingTable"></div>
-          <div id="breedingPagination"></div>
+          <div class="section-header">
+            <div>
+              <h3 class="section-title">日记审核</h3>
+              <p class="section-subtitle">按内容、情绪、标签和公开状态审核宠物日记，保证社区内容质量。</p>
+            </div>
+          </div>
+          <div class="toolbar-row">
+            <div class="left">
+              <input id="diariesKeyword" placeholder="搜索标题或正文内容" />
+              <button id="diariesSearchBtn" type="button" class="ghost">搜索</button>
+            </div>
+          </div>
+          <div id="diariesTable"></div>
+          <div id="diariesPagination"></div>
+        </div>
+      </section>
+
+      <section id="messagesTab" class="tab-panel hidden">
+        <div class="panel-grid">
+          <div class="card section">
+            <div class="section-header">
+              <div>
+                <h3 class="section-title">消息巡检</h3>
+                <p class="section-subtitle">查看聊天记录的发送方、接收方、已读状态与最后互动时间，支持关键词检索。</p>
+              </div>
+            </div>
+            <div class="toolbar-row">
+              <div class="left">
+                <input id="messagesKeyword" placeholder="搜索消息内容" />
+                <button id="messagesSearchBtn" type="button" class="ghost">搜索</button>
+              </div>
+            </div>
+            <div id="messagesTable"></div>
+            <div id="messagesPagination"></div>
+          </div>
+          <div class="card section">
+            <div class="section-header">
+              <div>
+                <h3 class="section-title">主人聊天会话</h3>
+                <p class="section-subtitle">运营查看主人之间的私讯状态、未读情况和关键话题。</p>
+              </div>
+              <div class="toolbar-actions">
+                <button id="createOwnerChatBtn" type="button" class="primary">新建主人会话</button>
+              </div>
+            </div>
+            <div id="ownerChatsTable"></div>
+            <div id="ownerChatsPagination"></div>
+          </div>
+          <div class="card section">
+            <div class="section-header">
+              <div>
+                <h3 class="section-title">宠物聊天会话</h3>
+                <p class="section-subtitle">补充宠物私语的展示态数据，支持审核内容与展示状态。</p>
+              </div>
+              <div class="toolbar-actions">
+                <button id="createPetChatBtn" type="button" class="primary">新建宠物会话</button>
+              </div>
+            </div>
+            <div id="petChatsTable"></div>
+            <div id="petChatsPagination"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="notificationsTab" class="tab-panel hidden">
+        <div class="panel-grid">
+          <div class="card section">
+            <div class="section-header">
+              <div>
+                <h3 class="section-title">发送运营通知</h3>
+                <p class="section-subtitle">可向单个用户或全量用户发送系统消息，支持活动召回、审核通知和运营提醒。</p>
+              </div>
+            </div>
+            <div class="stack">
+              <div class="field">
+                <label for="notificationTarget">发送目标</label>
+                <select id="notificationTarget">
+                  <option value="single">指定用户</option>
+                  <option value="all">全量用户</option>
+                </select>
+              </div>
+              <div class="field" id="notificationUsersField">
+                <label for="notificationUsers">接收用户</label>
+                <select id="notificationUsers" multiple size="8"></select>
+              </div>
+              <div class="field">
+                <label for="notificationType">通知类型</label>
+                <select id="notificationType">
+                  <option value="system">system</option>
+                  <option value="message">message</option>
+                  <option value="match">match</option>
+                  <option value="breeding">breeding</option>
+                  <option value="like">like</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="notificationMessage">通知内容</label>
+                <textarea id="notificationMessage" placeholder="请输入通知文案"></textarea>
+              </div>
+              <div class="toolbar-actions">
+                <button id="sendNotificationBtn" type="button" class="primary">发送通知</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card section">
+            <div class="section-header">
+              <div>
+                <h3 class="section-title">通知记录</h3>
+                <p class="section-subtitle">查看现有通知、修改文案与标记已读状态。</p>
+              </div>
+            </div>
+            <div id="notificationsTable"></div>
+            <div id="notificationsPagination"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="loginTab" class="tab-panel hidden">
+        <div class="card section">
+          <div class="section-header">
+            <div>
+              <h3 class="section-title">用户登录追踪</h3>
+              <p class="section-subtitle">记录用户最近登录时间、近 24 小时活跃情况、近 7 天活跃情况以及总审核人数。</p>
+            </div>
+          </div>
+          <div class="toolbar-row">
+            <div class="left">
+              <input id="loginKeyword" placeholder="搜索用户名或邮箱" />
+              <button id="loginSearchBtn" type="button" class="ghost">搜索</button>
+            </div>
+          </div>
+          <div id="loginSummary"></div>
+          <div id="loginTable"></div>
+          <div id="loginPagination"></div>
+        </div>
+      </section>
+
+      <section id="realmsTab" class="tab-panel hidden">
+        <div class="card section">
+          <div class="section-header">
+            <div>
+              <h3 class="section-title">云游地图运营配置</h3>
+              <p class="section-subtitle">维护三大云游地图的在线人数、展示名称、描述和加载短句。前端云游页面会直接同步这里的数据。</p>
+            </div>
+            <div class="toolbar-actions">
+              <button id="saveRuntimeBtn" type="button" class="primary">保存云游配置</button>
+            </div>
+          </div>
+          <div id="realmsContent"></div>
         </div>
       </section>
     </div>
   </div>
+
+  <div id="modalRoot" class="modal-root" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card card">
+      <div class="modal-head">
+        <div>
+          <h3 id="modalTitle">编辑</h3>
+          <p id="modalSubtitle">维护数据并保存到平台。</p>
+        </div>
+        <button id="modalCloseBtn" type="button" class="ghost" style="width:auto;">关闭</button>
+      </div>
+      <form id="modalForm" class="modal-form"></form>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 
   <script>
     const state = {
       token: localStorage.getItem('pupy_admin_token') || '',
       tab: 'overview',
-      keyword: '',
-      pageSize: 20,
-      pageByTab: {
+      pageSize: 12,
+      pages: {
         users: 1,
         pets: 1,
         market: 1,
+        marketOrders: 1,
+        walkOrders: 1,
+        careBookings: 1,
         breeding: 1,
+        matches: 1,
+        petLove: 1,
+        diaries: 1,
+        messages: 1,
+        ownerChats: 1,
+        petChats: 1,
+        notifications: 1,
+        login: 1,
       },
+      options: {
+        users: [],
+        pets: [],
+      },
+      runtimeConfig: null,
+      modal: null,
     };
 
-    const TAB_CONTENT = {
-      users: 'usersTable',
-      pets: 'petsTable',
-      market: 'marketTable',
-      breeding: 'breedingTable',
-    };
+    const MARKET_CATEGORY_OPTIONS = [
+      { value: 'supermarket', label: '主粮用品' },
+      { value: 'care', label: '护理养护' },
+      { value: 'walk', label: '帮忙溜溜' },
+      { value: 'love', label: '配对繁育' },
+    ];
+
+    const MARKET_TYPE_OPTIONS = [
+      { value: 'food', label: 'food / 狗粮主粮' },
+      { value: 'toy', label: 'toy / 用品玩具' },
+      { value: 'care_product', label: 'care_product / 护理养护' },
+      { value: 'service', label: 'service / 帮忙溜溜' },
+      { value: 'breeding', label: 'breeding / 配对繁育' },
+    ];
+
+    const ORDER_STATUS_OPTIONS = [
+      { value: '待处理', label: '待处理' },
+      { value: '待发货', label: '待发货' },
+      { value: '配送中', label: '配送中' },
+      { value: '已完成', label: '已完成' },
+      { value: '售后处理中', label: '售后处理中' },
+      { value: '待客服确认', label: '待客服确认' },
+    ];
+
+    const REVIEW_STATUS_OPTIONS = [
+      { value: '待审核', label: '待审核' },
+      { value: '已通过', label: '已通过' },
+      { value: '待复核', label: '待复核' },
+      { value: '已拒绝', label: '已拒绝' },
+    ];
+
+    const LOVE_STATUS_OPTIONS = [
+      { value: '待匹配', label: '待匹配' },
+      { value: '高热匹配', label: '高热匹配' },
+      { value: '待进一步观察', label: '待进一步观察' },
+      { value: '已进入聊天', label: '已进入聊天' },
+      { value: '平台推荐位', label: '平台推荐位' },
+      { value: '运营关注中', label: '运营关注中' },
+    ];
+
+    const CHAT_STATUS_OPTIONS = [
+      { value: '活跃', label: '活跃' },
+      { value: '高频互动', label: '高频互动' },
+      { value: '待回复', label: '待回复' },
+      { value: '热聊中', label: '热聊中' },
+      { value: '已建立默契', label: '已建立默契' },
+      { value: '待审核展示', label: '待审核展示' },
+    ];
 
     const $ = (id) => document.getElementById(id);
 
     function clearNode(node) {
-      while (node.firstChild) {
-        node.removeChild(node.firstChild);
-      }
+      if (!node) return;
+      while (node.firstChild) node.removeChild(node.firstChild);
     }
 
-    function textNode(tag, text, className) {
+    function el(tag, className, text) {
       const node = document.createElement(tag);
-      node.textContent = text;
       if (className) node.className = className;
+      if (text !== undefined && text !== null) node.textContent = String(text);
       return node;
     }
 
-    function div(className, text) {
-      const node = document.createElement('div');
-      if (className) node.className = className;
-      if (text !== undefined) node.textContent = text;
+    function stackCell(title, subtitle, extra) {
+      const node = el('div', 'cell-stack');
+      node.appendChild(el('strong', '', title || '未填写'));
+      if (subtitle) node.appendChild(el('div', 'sub', subtitle));
+      if (extra instanceof Node) node.appendChild(extra);
       return node;
     }
 
-    function button(label, options = {}) {
-      const node = document.createElement('button');
-      node.type = 'button';
-      node.textContent = label;
-      node.className = options.className || 'ghost';
-      if (options.disabled) node.disabled = true;
-      if (options.onClick) node.addEventListener('click', options.onClick);
-      return node;
+    function formatDateTime(value) {
+      if (!value) return '未记录';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     }
 
-    function createPill(label, tone) {
-      const node = document.createElement('span');
-      node.className = `pill ${tone}`;
-      node.textContent = label;
-      return node;
+    function parseList(value) {
+      if (!value) return [];
+      if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+      return String(value).split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean);
+    }
+
+    function tagRow(items) {
+      const row = el('div', 'tag-row');
+      (items || []).filter(Boolean).forEach((item) => {
+        row.appendChild(chip(item));
+      });
+      if (!row.childNodes.length) row.appendChild(chip('暂无'));
+      return row;
+    }
+
+    function chip(label, tone = '') {
+      return el('span', `chip ${tone}`.trim(), label);
     }
 
     function createEmptyState(message) {
-      return div('empty-state', message);
+      return el('div', 'empty-state', message || '暂无数据');
     }
 
     function createErrorState(message, retryHandler) {
-      const wrapper = div('error-state');
-      wrapper.appendChild(textNode('p', message));
+      const wrapper = el('div', 'error-state');
+      wrapper.appendChild(el('div', '', message || '数据加载失败。'));
       if (retryHandler) {
-        wrapper.appendChild(button('重试', { className: 'ghost', onClick: retryHandler }));
+        const retryBtn = el('button', 'ghost', '重试');
+        retryBtn.type = 'button';
+        retryBtn.addEventListener('click', retryHandler);
+        wrapper.appendChild(retryBtn);
       }
       return wrapper;
+    }
+
+    function showLoading(containerId, message = '正在同步数据...') {
+      const container = $(containerId);
+      if (!container) return;
+      clearNode(container);
+      container.appendChild(el('div', 'loading-inline', message));
+    }
+
+    function toast(message) {
+      const node = $('toast');
+      if (!node) return;
+      node.textContent = message;
+      node.classList.add('show');
+      window.clearTimeout(window.__pupyToastTimer);
+      window.__pupyToastTimer = window.setTimeout(() => node.classList.remove('show'), 2600);
     }
 
     function setButtonLoading(buttonNode, isLoading, loadingText, defaultText) {
@@ -305,38 +1160,12 @@
       buttonNode.textContent = isLoading ? loadingText : defaultText;
     }
 
-    function showLoading(containerId, message = '正在加载数据...') {
-      const container = $(containerId);
-      if (!container) return;
-      clearNode(container);
-      container.appendChild(div('loading-inline', message));
-    }
-
-    function showTableError(containerId, paginationId, message, retryHandler) {
-      const container = $(containerId);
-      const pagination = $(paginationId);
-      if (container) {
-        clearNode(container);
-        container.appendChild(createErrorState(message, retryHandler));
-      }
-      if (pagination) {
-        clearNode(pagination);
-      }
-    }
-
-    function toast(message) {
-      const node = $('toast');
-      node.textContent = message;
-      node.classList.add('show');
-      window.clearTimeout(window.__toastTimer);
-      window.__toastTimer = window.setTimeout(() => node.classList.remove('show'), 2400);
-    }
-
     function setLoggedOutState(message) {
       localStorage.removeItem('pupy_admin_token');
       state.token = '';
       $('app').classList.add('hidden');
-      $('loginStatus').textContent = message;
+      $('loginStatus').textContent = message || '登录状态已失效，请重新登录。';
+      $('adminIdentity').textContent = '未识别管理员';
     }
 
     async function request(path, options = {}) {
@@ -350,114 +1179,26 @@
         },
       });
 
-      const json = await response.json().catch(() => ({}));
+      const json = await response.json().catch(() => ({ success: response.ok }));
       if (!response.ok) {
         if (response.status === 401 && state.token) {
-          setLoggedOutState('登录状态已失效，请重新登录。');
+          setLoggedOutState('管理员登录状态已失效，请重新登录。');
         }
-        throw new Error(json.error || '请求失败');
+        throw new Error(json.error || json.message || '请求失败');
       }
       return json;
-    }
-
-    function renderPagination(containerId, pagination, onPageChange) {
-      const container = $(containerId);
-      clearNode(container);
-      if (!pagination) return;
-
-      const wrapper = div('pagination');
-      const summary = textNode('div', `第${pagination.page} / ${pagination.total_pages} 页，共${pagination.total} 条`);
-      const controls = div('controls');
-      controls.appendChild(button('上一页', {
-        disabled: pagination.page <= 1,
-        onClick: () => onPageChange(pagination.page - 1),
-      }));
-      controls.appendChild(button('下一页', {
-        disabled: pagination.page >= pagination.total_pages,
-        onClick: () => onPageChange(pagination.page + 1),
-      }));
-      wrapper.appendChild(summary);
-      wrapper.appendChild(controls);
-      container.appendChild(wrapper);
-    }
-
-    function renderTable(containerId, columns, rows) {
-      const container = $(containerId);
-      clearNode(container);
-
-      if (!rows.length) {
-        container.appendChild(createEmptyState('暂无数据'));
-        return;
-      }
-
-      const table = document.createElement('table');
-      const thead = document.createElement('thead');
-      const headerRow = document.createElement('tr');
-      columns.forEach((column) => headerRow.appendChild(textNode('th', column.label)));
-      thead.appendChild(headerRow);
-      table.appendChild(thead);
-
-      const tbody = document.createElement('tbody');
-      rows.forEach((row) => {
-        const tr = document.createElement('tr');
-        columns.forEach((column) => {
-          const td = document.createElement('td');
-          const content = column.render(row);
-          if (content instanceof Node) {
-            td.appendChild(content);
-          } else {
-            td.textContent = String(content || '');
-          }
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      container.appendChild(table);
-    }
-
-    function createStackCell(title, subtitle) {
-      const wrapper = div('');
-      wrapper.appendChild(textNode('strong', title || '未填写')); 
-      if (subtitle) {
-        wrapper.appendChild(textNode('div', subtitle, 'muted'));
-      }
-      return wrapper;
-    }
-
-    function createStatusCell(label, tone) {
-      const wrapper = div('');
-      wrapper.appendChild(createPill(label, tone));
-      return wrapper;
-    }
-
-    function renderList(containerId, rows, formatter, emptyText) {
-      const container = $(containerId);
-      clearNode(container);
-      if (!rows.length) {
-        container.appendChild(createEmptyState(emptyText || '暂无数据'));
-        return;
-      }
-
-      rows.forEach((row, index) => {
-        const item = formatter(row);
-        if (index < rows.length - 1) {
-          item.style.borderBottom = '1px solid var(--line)';
-        }
-        item.style.padding = '12px 0';
-        container.appendChild(item);
-      });
     }
 
     async function validateTokenAndBoot() {
       if (!state.token) return;
       try {
-        await request('/api/auth/me');
-        loginStatus.textContent = '已识别管理员会话，正在同步数据。';
-        await loadCurrentTab();
+        const me = await request('/api/auth/me');
+        $('adminIdentity').textContent = me?.data?.email || '管理员已登录';
         $('app').classList.remove('hidden');
+        $('loginStatus').textContent = '已识别管理员会话，正在同步后台数据。';
+        await loadTab(state.tab);
       } catch (error) {
-        setLoggedOutState(error.message || '历史登录已失效，请重新登录。');
+        setLoggedOutState(error.message || '历史登录状态不可用，请重新登录。');
       }
     }
 
@@ -466,12 +1207,12 @@
       const password = $('password').value.trim();
       const loginBtn = $('loginBtn');
       if (!email || !password) {
-        loginStatus.textContent = '请输入管理员邮箱和登录密码。';
+        $('loginStatus').textContent = '请输入管理员邮箱和登录密码。';
         return;
       }
 
       setButtonLoading(loginBtn, true, '登录中...', '登录后台');
-      loginStatus.textContent = '正在验证管理员身份。';
+      $('loginStatus').textContent = '正在验证管理员身份。';
       try {
         const result = await request('/api/auth/login', {
           method: 'POST',
@@ -479,211 +1220,1695 @@
         });
         state.token = result.data.token;
         localStorage.setItem('pupy_admin_token', state.token);
-        await loadCurrentTab();
+        $('adminIdentity').textContent = result.data.user?.email || email;
         $('app').classList.remove('hidden');
-        loginStatus.textContent = '登录成功，后台数据已同步。';
+        $('loginStatus').textContent = '登录成功，后台数据已同步。';
         toast('后台登录成功');
+        await loadTab(state.tab);
       } catch (error) {
         $('app').classList.add('hidden');
-        loginStatus.textContent = error.message || '登录失败，请稍后重试。';
+        $('loginStatus').textContent = error.message || '登录失败，请稍后再试。';
       } finally {
         setButtonLoading(loginBtn, false, '登录中...', '登录后台');
       }
     }
 
-    function renderStats(stats) {
-      const container = $('stats');
+    async function ensureOptionsLoaded(force = false) {
+      if (!force && state.options.users.length && state.options.pets.length) return state.options;
+      const result = await request('/api/admin/options');
+      state.options = result.data || { users: [], pets: [] };
+      renderNotificationUsers();
+      return state.options;
+    }
+
+    function renderNotificationUsers() {
+      const select = $('notificationUsers');
+      if (!select) return;
+      clearNode(select);
+      state.options.users.forEach((user) => {
+        const option = document.createElement('option');
+        option.value = user.id;
+        option.textContent = `${user.username || '未命名用户'} · ${user.email || '未填邮箱'}`;
+        select.appendChild(option);
+      });
+    }
+
+    function renderPagination(containerId, pagination, onPageChange) {
+      const container = $(containerId);
       clearNode(container);
-      [
-        ['用户', stats.users],
-        ['宠物', stats.pets],
-        ['消息', stats.messages],
-        ['商品', stats.products],
-      ].forEach(([label, value]) => {
-        const card = div('card stat');
-        card.appendChild(textNode('small', String(label)));
-        card.appendChild(textNode('strong', String(value)));
-        container.appendChild(card);
+      if (!pagination || !container) return;
+
+      const wrapper = el('div', 'pagination');
+      wrapper.appendChild(el('div', '', `第 ${pagination.page} / ${pagination.total_pages} 页，共 ${pagination.total} 条`));
+      const controls = el('div', 'toolbar-actions');
+      const prevBtn = el('button', 'ghost', '上一页');
+      prevBtn.type = 'button';
+      prevBtn.disabled = pagination.page <= 1;
+      prevBtn.addEventListener('click', () => onPageChange(pagination.page - 1));
+      const nextBtn = el('button', 'ghost', '下一页');
+      nextBtn.type = 'button';
+      nextBtn.disabled = pagination.page >= pagination.total_pages;
+      nextBtn.addEventListener('click', () => onPageChange(pagination.page + 1));
+      controls.appendChild(prevBtn);
+      controls.appendChild(nextBtn);
+      wrapper.appendChild(controls);
+      container.appendChild(wrapper);
+    }
+
+    function renderTable(containerId, columns, rows, emptyText = '暂无数据') {
+      const container = $(containerId);
+      if (!container) return;
+      clearNode(container);
+
+      if (!rows || !rows.length) {
+        container.appendChild(createEmptyState(emptyText));
+        return;
+      }
+
+      const wrap = el('div', 'table-wrap');
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      columns.forEach((column) => headerRow.appendChild(el('th', '', column.label)));
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      rows.forEach((row) => {
+        const tr = document.createElement('tr');
+        columns.forEach((column) => {
+          const td = document.createElement('td');
+          const rendered = column.render(row);
+          if (rendered instanceof Node) {
+            td.appendChild(rendered);
+          } else {
+            td.textContent = rendered === undefined || rendered === null ? '' : String(rendered);
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      container.appendChild(wrap);
+    }
+
+    function openModal({ title, subtitle, buildForm, onSubmit, confirmText = '保存更改' }) {
+      const root = $('modalRoot');
+      const form = $('modalForm');
+      $('modalTitle').textContent = title;
+      $('modalSubtitle').textContent = subtitle || '请检查填写内容后保存。';
+      clearNode(form);
+      const built = buildForm();
+      if (built instanceof Node) {
+        form.appendChild(built);
+      } else if (Array.isArray(built)) {
+        built.forEach((node) => form.appendChild(node));
+      }
+
+      const footer = el('div', 'modal-footer');
+      const cancelBtn = el('button', 'ghost', '取消');
+      cancelBtn.type = 'button';
+      cancelBtn.addEventListener('click', closeModal);
+      const confirmBtn = el('button', 'primary', confirmText);
+      confirmBtn.type = 'submit';
+      footer.appendChild(cancelBtn);
+      footer.appendChild(confirmBtn);
+      form.appendChild(footer);
+
+      form.onsubmit = async (event) => {
+        event.preventDefault();
+        setButtonLoading(confirmBtn, true, '保存中...', confirmText);
+        try {
+          await onSubmit(form, confirmBtn);
+          closeModal();
+        } catch (error) {
+          toast(error.message || '保存失败，请稍后重试。');
+          setButtonLoading(confirmBtn, false, '保存中...', confirmText);
+          return;
+        }
+        setButtonLoading(confirmBtn, false, '保存中...', confirmText);
+      };
+
+      root.classList.add('show');
+      root.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal() {
+      const root = $('modalRoot');
+      root.classList.remove('show');
+      root.setAttribute('aria-hidden', 'true');
+      $('modalForm').onsubmit = null;
+      clearNode($('modalForm'));
+    }
+
+    async function readFilesAsDataUrls(fileList) {
+      const files = Array.from(fileList || []);
+      return Promise.all(
+        files.map(
+          (file) =>
+            new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = () => reject(new Error(`读取文件失败：${file.name}`));
+              reader.readAsDataURL(file);
+            }),
+        ),
+      );
+    }
+
+    function field(labelText, inputNode, options = {}) {
+      const wrapper = el('div', `field ${options.className || ''}`.trim());
+      const label = document.createElement('label');
+      label.textContent = labelText;
+      if (options.inlineCheck) {
+        wrapper.classList.add('inline-check');
+        wrapper.appendChild(inputNode);
+        wrapper.appendChild(label);
+      } else {
+        wrapper.appendChild(label);
+        wrapper.appendChild(inputNode);
+      }
+      return wrapper;
+    }
+
+    function textInput(name, value = '', placeholder = '') {
+      const input = document.createElement('input');
+      input.name = name;
+      input.value = value || '';
+      input.placeholder = placeholder;
+      return input;
+    }
+
+    function numberInput(name, value = '', placeholder = '') {
+      const input = document.createElement('input');
+      input.name = name;
+      input.type = 'number';
+      input.value = value === null || value === undefined ? '' : value;
+      input.placeholder = placeholder;
+      return input;
+    }
+
+    function textareaInput(name, value = '', placeholder = '') {
+      const input = document.createElement('textarea');
+      input.name = name;
+      input.value = value || '';
+      input.placeholder = placeholder;
+      return input;
+    }
+
+    function datetimeInput(name, value = '') {
+      const input = document.createElement('input');
+      input.type = 'datetime-local';
+      input.name = name;
+      if (value) {
+        const date = new Date(value);
+        if (!Number.isNaN(date.getTime())) {
+          input.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        }
+      }
+      return input;
+    }
+
+    function checkboxInput(name, checked = false) {
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.name = name;
+      input.checked = Boolean(checked);
+      return input;
+    }
+
+    function selectInput(name, options, value = '') {
+      const select = document.createElement('select');
+      select.name = name;
+      options.forEach((optionItem) => {
+        const option = document.createElement('option');
+        option.value = optionItem.value;
+        option.textContent = optionItem.label;
+        if (String(optionItem.value) === String(value || '')) option.selected = true;
+        select.appendChild(option);
+      });
+      return select;
+    }
+
+    function multiSelectValues(selectNode) {
+      return Array.from(selectNode.selectedOptions || []).map((item) => item.value);
+    }
+
+    function toIsoValue(value, fallback = '') {
+      if (!value) return fallback || new Date().toISOString();
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? (fallback || new Date().toISOString()) : date.toISOString();
+    }
+
+    function serializeOrderItems(items) {
+      return (items || []).map((item) => `${item.title || ''}|${item.quantity || 1}|${item.unitPrice || 0}`).join('\n');
+    }
+
+    function parseOrderItems(rawValue) {
+      return parseList(rawValue).map((line, index) => {
+        const [title, quantity, unitPrice] = String(line).split('|').map((item) => item.trim());
+        return {
+          productId: `runtime-item-${Date.now()}-${index}`,
+          title: title || `未命名商品 ${index + 1}`,
+          image: '',
+          quantity: Number(quantity || 1),
+          unitPrice: Number(unitPrice || 0),
+        };
+      });
+    }
+
+    function serializeChatMessages(messages) {
+      return (messages || []).map((item) => `${item.senderName || ''}|${item.role || 'owner'}|${item.content || ''}`).join('\n');
+    }
+
+    function parseChatMessages(rawValue) {
+      return parseList(rawValue).map((line, index) => {
+        const [senderName, role, ...contentParts] = String(line).split('|');
+        return {
+          id: `runtime-chat-msg-${Date.now()}-${index}`,
+          senderName: (senderName || '').trim() || `参与者 ${index + 1}`,
+          role: role === 'pet' || role === 'system' ? role : 'owner',
+          content: contentParts.join('|').trim() || '空消息',
+          createdAt: new Date().toISOString(),
+          moderationStatus: '正常',
+        };
       });
     }
 
     async function loadOverview() {
-      showLoading('recentUsers');
-      showLoading('recentPets');
-      showLoading('recentMessages');
+      showLoading('overviewContent');
+      const [overviewResult, activityResult] = await Promise.all([
+        request('/api/admin/overview'),
+        request('/api/admin/activity-logs?limit=12'),
+      ]);
 
-      const result = await request('/api/admin/overview');
-      renderStats(result.data.stats);
+      const container = $('overviewContent');
+      clearNode(container);
+      const data = overviewResult.data;
+      const logs = activityResult.data || [];
 
-      renderList('recentUsers', result.data.recentUsers || [], (user) => {
-        const node = div('');
-        const title = textNode('div', user.username || '未命名用户');
-        title.style.fontWeight = '700';
-        node.appendChild(title);
-        node.appendChild(textNode('div', user.email || '未填写邮箱', 'muted')); 
-        node.appendChild(textNode('div', `${user.resident_city || '未填写城市'} · ${user.is_verified ? '已审核' : '待审核'}`, 'muted'));
-        return node;
-      }, '最近还没有新的注册用户。');
+      const statsGrid = el('div', 'stats-grid');
+      [
+        ['用户', data.stats.users],
+        ['宠物', data.stats.pets],
+        ['匹配', data.stats.matches],
+        ['消息', data.stats.messages],
+        ['日记', data.stats.diaries],
+        ['集市条目', data.stats.products],
+        ['繁育请求', data.stats.breedingRequests],
+        ['通知', data.stats.notifications],
+      ].forEach(([label, value]) => {
+        const stat = el('div', 'stat');
+        stat.appendChild(el('small', '', label));
+        stat.appendChild(el('strong', '', value));
+        statsGrid.appendChild(stat);
+      });
+      container.appendChild(statsGrid);
 
-      renderList('recentPets', result.data.recentPets || [], (pet) => {
-        const node = div('');
-        const title = textNode('div', pet.name || '未命名宠物');
-        title.style.fontWeight = '700';
-        node.appendChild(title);
-        node.appendChild(textNode('div', `${pet.type || '未填写类型'} · ${pet.gender || '未填写性别'}`, 'muted'));
-        node.appendChild(textNode('div', `主人：${pet.owner?.username || '未知'}`, 'muted'));
-        return node;
-      }, '最近还没有新的宠物档案。');
+      const surface = el('div', 'surface-grid');
+      const left = el('div', 'mini-grid');
+      const right = el('div', 'mini-grid');
+      surface.appendChild(left);
+      surface.appendChild(right);
 
-      renderList('recentMessages', result.data.recentMessages || [], (message) => {
-        const node = div('');
-        const title = textNode('div', `${message.sender?.username || '未知'} → ${message.receiver?.username || '未知'}`);
-        title.style.fontWeight = '700';
-        node.appendChild(title);
-        node.appendChild(textNode('div', message.content || '空消息', 'muted')); 
-        return node;
-      }, '最近还没有新的消息记录。');
+      const healthCard = el('section', 'card section');
+      healthCard.appendChild(sectionHeading('平台健康状态', '确认 API、AI、Supabase 与后台权限配置是否就绪。'));
+      const healthGrid = el('div', 'summary-grid');
+      [
+        ['环境', data.health.environment],
+        ['API Base', data.health.apiBaseUrl],
+        ['Supabase', data.health.supabaseConfigured ? '连接正常' : '连接异常'],
+        ['Google AI', data.health.googleAiConfigured ? '已启用' : '降级模式'],
+      ].forEach(([label, value]) => {
+        const card = el('div', 'summary-card');
+        card.appendChild(el('small', '', label));
+        card.appendChild(el('strong', '', value));
+        healthGrid.appendChild(card);
+      });
+      healthCard.appendChild(healthGrid);
+      left.appendChild(healthCard);
+
+      const recentCard = el('section', 'card section');
+      recentCard.appendChild(sectionHeading('最近注册用户', '快速查看最新进入平台的用户与审核状态。'));
+      recentCard.appendChild(renderSimpleList(data.recentUsers || [], (user) => {
+        const item = el('div', 'list-item');
+        item.appendChild(el('strong', '', user.username || '未命名用户'));
+        item.appendChild(el('div', 'muted', user.email || '未填写邮箱'));
+        item.appendChild(el('div', 'muted', `${user.resident_city || '未填写城市'} · ${user.is_verified ? '已审核' : '待审核'} · 最近登录：${formatDateTime(user.last_login)}`));
+        return item;
+      }, '暂无最近注册用户。'));
+      left.appendChild(recentCard);
+
+      const petCard = el('section', 'card section');
+      petCard.appendChild(sectionHeading('最近宠物档案', '查看最新创建的宠物卡片与主人关联。'));
+      petCard.appendChild(renderSimpleList(data.recentPets || [], (pet) => {
+        const item = el('div', 'list-item');
+        item.appendChild(el('strong', '', pet.name || '未命名宠物'));
+        item.appendChild(el('div', 'muted', `${pet.type || '未填写类型'} · ${pet.gender || '未填写性别'}`));
+        item.appendChild(el('div', 'muted', `主人：${pet.owner?.username || '未知'} · 创建时间：${formatDateTime(pet.created_at)}`));
+        return item;
+      }, '暂无宠物档案更新。'));
+      right.appendChild(petCard);
+
+      const messagesCard = el('section', 'card section');
+      messagesCard.appendChild(sectionHeading('最近消息', '查看平台最近的即时聊天样本。'));
+      messagesCard.appendChild(renderSimpleList(data.recentMessages || [], (message) => {
+        const item = el('div', 'list-item');
+        item.appendChild(el('strong', '', `${message.sender?.username || '未知'} → ${message.receiver?.username || '未知'}`));
+        item.appendChild(el('div', 'muted', message.content || '空消息'));
+        item.appendChild(el('div', 'muted', formatDateTime(message.created_at)));
+        return item;
+      }, '暂无消息记录。'));
+      right.appendChild(messagesCard);
+
+      const logsCard = el('section', 'card section');
+      logsCard.appendChild(sectionHeading('后台操作记录', '记录管理员最近的保存、审核、删除、配置修改动作。'));
+      logsCard.appendChild(renderSimpleList(logs, (log) => {
+        const item = el('div', 'list-item');
+        item.appendChild(el('strong', '', `${log.actorEmail || 'system'} · ${log.action}`));
+        item.appendChild(el('div', 'muted', `${log.entityType || 'unknown'}${log.entityId ? ` · ${log.entityId}` : ''}`));
+        item.appendChild(el('div', 'muted', `${log.summary || '暂无说明'} · ${formatDateTime(log.createdAt)}`));
+        return item;
+      }, '还没有后台操作记录。'));
+      container.appendChild(surface);
+      container.appendChild(logsCard);
+    }
+
+    function sectionHeading(title, subtitle) {
+      const wrap = document.createDocumentFragment();
+      const heading = el('div', 'section-header');
+      const block = el('div');
+      const h3 = el('h3', 'section-title', title);
+      const p = el('p', 'section-subtitle', subtitle);
+      block.appendChild(h3);
+      block.appendChild(p);
+      heading.appendChild(block);
+      wrap.appendChild(heading);
+      return wrap;
+    }
+
+    function renderSimpleList(rows, formatter, emptyText) {
+      const container = el('div', 'content-list');
+      if (!rows.length) {
+        container.appendChild(createEmptyState(emptyText));
+        return container;
+      }
+      rows.forEach((row) => container.appendChild(formatter(row)));
+      return container;
+    }
+
+    function userVerificationChip(user) {
+      return chip(user.is_verified ? '已审核' : '待审核', user.is_verified ? 'ok' : 'pending');
     }
 
     async function loadUsers() {
       showLoading('usersTable');
-      const page = state.pageByTab.users;
-      const result = await request(`/api/admin/users?page=${page}&limit=${state.pageSize}&keyword=${encodeURIComponent(state.keyword)}`);
+      const keyword = $('usersKeyword').value.trim();
+      const page = state.pages.users;
+      const result = await request(`/api/admin/users?page=${page}&limit=${state.pageSize}&keyword=${encodeURIComponent(keyword)}`);
+
       renderTable('usersTable', [
         {
           label: '用户',
-          render: (user) => createStackCell(user.username || '未命名用户', user.email || '未填写邮箱'),
+          render: (user) => stackCell(user.username || '未命名用户', user.email || '未填写邮箱', tagRow([user.gender, user.age ? `${user.age} 岁` : '', user.resident_city]))
         },
         {
-          label: '城市 / MBTI',
-          render: (user) => createStackCell(user.resident_city || '未填写', user.mbti || '未填写'),
+          label: '个性资料',
+          render: (user) => stackCell(user.mbti || '未填写 MBTI', user.signature || user.bio || '暂无个性签名', tagRow(user.hobbies || [])),
         },
         {
-          label: '状态',
-          render: (user) => createStatusCell(user.is_verified ? '已审核' : '待审核', user.is_verified ? 'ok' : 'pending'),
+          label: '登录 / 审核',
+          render: (user) => {
+            const node = el('div', 'cell-stack');
+            node.appendChild(userVerificationChip(user));
+            node.appendChild(el('div', 'sub', `最近登录：${formatDateTime(user.last_login)}`));
+            node.appendChild(el('div', 'sub', `创建时间：${formatDateTime(user.created_at)}`));
+            return node;
+          },
         },
         {
           label: '操作',
           render: (user) => {
-            const wrapper = div('');
-            const label = user.is_verified ? '取消通过' : '审核通过';
-            const action = button(label, {
-              className: user.is_verified ? 'ghost' : 'primary',
-              onClick: async () => {
-                setButtonLoading(action, true, '处理中...', label);
-                try {
-                  await request(`/api/admin/users/${user.id}/verification`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ is_verified: !user.is_verified }),
-                  });
-                  toast(!user.is_verified ? '审核状态已更新为通过' : '审核状态已取消');
-                  await loadUsers();
-                } catch (error) {
-                  toast(error.message || '审核更新失败');
-                } finally {
-                  setButtonLoading(action, false, '处理中...', label);
-                }
-              },
+            const row = el('div', 'table-actions');
+            const editBtn = el('button', 'ghost', '编辑资料');
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', () => openUserEditor(user));
+            const verifyBtn = el('button', user.is_verified ? 'ghost' : 'primary', user.is_verified ? '取消通过' : '审核通过');
+            verifyBtn.type = 'button';
+            verifyBtn.addEventListener('click', async () => {
+              setButtonLoading(verifyBtn, true, '处理中...', user.is_verified ? '取消通过' : '审核通过');
+              try {
+                await request(`/api/admin/users/${user.id}/verification`, {
+                  method: 'PATCH',
+                  body: JSON.stringify({ is_verified: !user.is_verified }),
+                });
+                toast(!user.is_verified ? '用户已审核通过' : '已取消用户审核通过');
+                await loadUsers();
+              } catch (error) {
+                toast(error.message || '审核更新失败');
+              } finally {
+                setButtonLoading(verifyBtn, false, '处理中...', user.is_verified ? '取消通过' : '审核通过');
+              }
             });
-            wrapper.appendChild(action);
-            return wrapper;
+            row.appendChild(editBtn);
+            row.appendChild(verifyBtn);
+            return row;
           },
         },
-      ], result.data || []);
+      ], result.data || [], '暂无用户数据。');
+
       renderPagination('usersPagination', result.pagination, (nextPage) => {
-        state.pageByTab.users = nextPage;
-        void safeLoadSection('users');
+        state.pages.users = nextPage;
+        void loadUsers().catch(handleTabError('usersTable', 'usersPagination', loadUsers));
+      });
+    }
+
+    async function openUserEditor(user) {
+      openModal({
+        title: `编辑用户 · ${user.username || '未命名用户'}`,
+        subtitle: '支持直接修改真实资料，并可上传头像或多张主人照片到云端。',
+        buildForm: () => {
+          const fragment = document.createDocumentFragment();
+          const grid = el('div', 'modal-grid');
+          grid.appendChild(field('用户名', textInput('username', user.username || '', '请输入用户名')));
+          grid.appendChild(field('年龄', numberInput('age', user.age || '', '年龄')));
+          grid.appendChild(field('性别', textInput('gender', user.gender || '', '男 / 女 / 其他')));
+          grid.appendChild(field('常驻城市', textInput('resident_city', user.resident_city || '', '请输入城市')));
+          grid.appendChild(field('MBTI', textInput('mbti', user.mbti || '', '例如 ENFP')));
+          grid.appendChild(field('签名', textInput('signature', user.signature || '', '一句话签名')));
+          grid.appendChild(field('审核通过', checkboxInput('is_verified', user.is_verified), { inlineCheck: true }));
+          fragment.appendChild(grid);
+          fragment.appendChild(field('常去城市（逗号或换行分隔）', textareaInput('frequent_cities', (user.frequent_cities || []).join('\n'), '例如：上海\n杭州\n深圳')));
+          fragment.appendChild(field('兴趣爱好（逗号或换行分隔）', textareaInput('hobbies', (user.hobbies || []).join('\n'), '例如：露营\n徒步\n摄影')));
+          fragment.appendChild(field('头像链接', textInput('avatar_url', user.avatar_url || '', '可直接粘贴云端 URL')));
+          fragment.appendChild(field('更多照片链接（逗号或换行分隔）', textareaInput('photos', (user.photos || []).join('\n'), '支持历史 URL，与新上传图片会合并保存')));
+          fragment.appendChild(field('上传新的主人照片', (() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.name = 'photo_files';
+            input.accept = 'image/*';
+            input.multiple = true;
+            return input;
+          })()));
+          fragment.appendChild(field('个人简介', textareaInput('bio', user.bio || '', '补充详细介绍')));
+          return fragment;
+        },
+        onSubmit: async (form) => {
+          const photoFiles = form.querySelector('input[name="photo_files"]');
+          const uploadedDataUrls = await readFilesAsDataUrls(photoFiles?.files || []);
+          const photos = [...parseList(form.elements.photos.value), ...uploadedDataUrls];
+          await request(`/api/admin/users/${user.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              username: form.elements.username.value.trim(),
+              age: form.elements.age.value ? Number(form.elements.age.value) : null,
+              gender: form.elements.gender.value.trim(),
+              resident_city: form.elements.resident_city.value.trim(),
+              frequent_cities: parseList(form.elements.frequent_cities.value),
+              hobbies: parseList(form.elements.hobbies.value),
+              mbti: form.elements.mbti.value.trim(),
+              signature: form.elements.signature.value.trim(),
+              avatar_url: form.elements.avatar_url.value.trim(),
+              photos,
+              bio: form.elements.bio.value.trim(),
+              is_verified: form.elements.is_verified.checked,
+            }),
+          });
+          toast('用户资料已更新');
+          await loadUsers();
+        },
       });
     }
 
     async function loadPets() {
       showLoading('petsTable');
-      const page = state.pageByTab.pets;
-      const result = await request(`/api/admin/pets?page=${page}&limit=${state.pageSize}`);
+      const keyword = $('petsKeyword').value.trim();
+      const page = state.pages.pets;
+      const result = await request(`/api/admin/pets?page=${page}&limit=${state.pageSize}&keyword=${encodeURIComponent(keyword)}`);
+
       renderTable('petsTable', [
-        { label: '宠物', render: (pet) => createStackCell(pet.name || '未命名宠物', pet.type || '未填写类型') },
-        { label: '主人', render: (pet) => createStackCell(pet.owner?.username || '未知', pet.owner?.email || '') },
-        { label: '健康', render: (pet) => createStackCell(pet.health_status || '未填写', `疫苗：${pet.vaccinated ? '已接种' : '未接种'}`) },
-        { label: '分身', render: (pet) => createStatusCell(pet.is_digital_twin ? '已生成' : '未生成', pet.is_digital_twin ? 'ok' : 'pending') },
-      ], result.data || []);
+        {
+          label: '宠物',
+          render: (pet) => stackCell(pet.name || '未命名宠物', `${pet.type || '未填写类型'} · ${pet.gender || '未填写性别'}`, tagRow([pet.breed, pet.age ? `${pet.age} 岁` : '', pet.weight ? `${pet.weight} kg` : '']))
+        },
+        {
+          label: '主人',
+          render: (pet) => stackCell(pet.owner?.username || '未知主人', pet.owner?.email || '未填写邮箱', userVerificationChip({ is_verified: pet.owner?.is_verified })),
+        },
+        {
+          label: '健康与分身',
+          render: (pet) => {
+            const node = el('div', 'cell-stack');
+            node.appendChild(chip(pet.health_status || '未填写健康状态'));
+            node.appendChild(chip(pet.vaccinated ? '已接种疫苗' : '未接种疫苗', pet.vaccinated ? 'ok' : 'pending'));
+            node.appendChild(chip(pet.is_digital_twin ? '已生成数字分身' : '未生成数字分身', pet.is_digital_twin ? 'ok' : 'pending'));
+            return node;
+          },
+        },
+        {
+          label: '操作',
+          render: (pet) => {
+            const row = el('div', 'table-actions');
+            const editBtn = el('button', 'primary', '编辑资料');
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', () => openPetEditor(pet));
+            row.appendChild(editBtn);
+            return row;
+          },
+        },
+      ], result.data || [], '暂无宠物数据。');
+
       renderPagination('petsPagination', result.pagination, (nextPage) => {
-        state.pageByTab.pets = nextPage;
-        void safeLoadSection('pets');
+        state.pages.pets = nextPage;
+        void loadPets().catch(handleTabError('petsTable', 'petsPagination', loadPets));
+      });
+    }
+
+    async function openPetEditor(pet) {
+      openModal({
+        title: `编辑宠物 · ${pet.name || '未命名宠物'}`,
+        subtitle: '支持修改图集、健康状态、品种、分身标记与详细介绍。',
+        buildForm: () => {
+          const fragment = document.createDocumentFragment();
+          const grid = el('div', 'modal-grid');
+          grid.appendChild(field('宠物名称', textInput('name', pet.name || '', '请输入名称')));
+          grid.appendChild(field('宠物类型', textInput('type', pet.type || '', '例如：金毛寻回犬')));
+          grid.appendChild(field('性别', textInput('gender', pet.gender || '', '公 / 母')));
+          grid.appendChild(field('性格', textInput('personality', pet.personality || '', '例如：外向亲人')));
+          grid.appendChild(field('品种', textInput('breed', pet.breed || '', '请输入品种')));
+          grid.appendChild(field('年龄', numberInput('age', pet.age || '', '年龄')));
+          grid.appendChild(field('体重', numberInput('weight', pet.weight || '', '体重 kg')));
+          grid.appendChild(field('健康状态', textInput('health_status', pet.health_status || '', '例如：状态稳定')));
+          grid.appendChild(field('已接种疫苗', checkboxInput('vaccinated', pet.vaccinated), { inlineCheck: true }));
+          grid.appendChild(field('已生成数字分身', checkboxInput('is_digital_twin', pet.is_digital_twin), { inlineCheck: true }));
+          fragment.appendChild(grid);
+          fragment.appendChild(field('图片链接（逗号或换行分隔）', textareaInput('images', (pet.images || []).join('\n'), '支持历史 URL，与新上传图片合并保存')));
+          fragment.appendChild(field('上传新的宠物图片', (() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.name = 'image_files';
+            input.accept = 'image/*';
+            input.multiple = true;
+            return input;
+          })()));
+          fragment.appendChild(field('宠物简介', textareaInput('bio', pet.bio || '', '请输入宠物介绍')));
+          fragment.appendChild(field('血统 / 证书信息', textareaInput('pedigree_info', pet.pedigree_info || '', '如有可填写')));
+          fragment.appendChild(field('数字分身数据（JSON）', textareaInput('digital_twin_data', pet.digital_twin_data ? JSON.stringify(pet.digital_twin_data, null, 2) : '', '例如：{"model_url":"..."}')));
+          return fragment;
+        },
+        onSubmit: async (form) => {
+          const imageFiles = form.querySelector('input[name="image_files"]');
+          const uploadedDataUrls = await readFilesAsDataUrls(imageFiles?.files || []);
+          let digitalTwinData = null;
+          if (form.elements.digital_twin_data.value.trim()) {
+            try {
+              digitalTwinData = JSON.parse(form.elements.digital_twin_data.value.trim());
+            } catch {
+              throw new Error('数字分身数据不是合法 JSON，请检查后再保存。');
+            }
+          }
+          await request(`/api/admin/pets/${pet.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              name: form.elements.name.value.trim(),
+              type: form.elements.type.value.trim(),
+              gender: form.elements.gender.value.trim(),
+              personality: form.elements.personality.value.trim(),
+              breed: form.elements.breed.value.trim(),
+              age: form.elements.age.value ? Number(form.elements.age.value) : null,
+              weight: form.elements.weight.value ? Number(form.elements.weight.value) : null,
+              images: [...parseList(form.elements.images.value), ...uploadedDataUrls],
+              bio: form.elements.bio.value.trim(),
+              health_status: form.elements.health_status.value.trim(),
+              vaccinated: form.elements.vaccinated.checked,
+              is_digital_twin: form.elements.is_digital_twin.checked,
+              pedigree_info: form.elements.pedigree_info.value.trim(),
+              digital_twin_data: digitalTwinData,
+            }),
+          });
+          toast('宠物资料已更新');
+          await loadPets();
+        },
       });
     }
 
     async function loadMarket() {
       showLoading('marketTable');
-      const page = state.pageByTab.market;
-      const result = await request(`/api/admin/market?page=${page}&limit=${state.pageSize}`);
+      await ensureOptionsLoaded();
+      const page = state.pages.market;
+      const keyword = $('marketKeyword').value.trim();
+      const category = $('marketCategoryFilter').value;
+      const status = $('marketStatusFilter').value;
+      const result = await request(`/api/admin/market?page=${page}&limit=${state.pageSize}&keyword=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}&status=${encodeURIComponent(status)}`);
+
       renderTable('marketTable', [
-        { label: '标题', render: (item) => createStackCell(item.title || '未命名商品', item.category || item.type || '未分类') },
-        { label: '卖家', render: (item) => createStackCell(item.seller?.username || '未知', item.seller?.email || '') },
-        { label: '宠物', render: (item) => createStackCell(item.pet?.name || '未关联', item.pet?.type || '') },
-        { label: '价格 / 状态', render: (item) => createStackCell(item.price ? `¥${item.price}` : '待定', item.status || 'active') },
-      ], result.data || []);
+        {
+          label: '条目',
+          render: (item) => stackCell(item.title || '未命名条目', `${item.category || '未分类'} · ${item.type || '未定义类型'}`, tagRow([item.status, item.price ? `¥${item.price}` : '价格待定']))
+        },
+        {
+          label: '卖家 / 宠物',
+          render: (item) => stackCell(item.seller?.username || '未知卖家', item.seller?.email || '未填邮箱', tagRow([item.pet?.name || '未关联宠物', item.pet?.type || '']))
+        },
+        {
+          label: '描述',
+          render: (item) => stackCell(item.description || '暂无描述', item.requirements || '暂无附加要求'),
+        },
+        {
+          label: '操作',
+          render: (item) => {
+            const row = el('div', 'table-actions');
+            const editBtn = el('button', 'ghost', '编辑');
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', () => openMarketEditor(item));
+            const deleteBtn = el('button', 'danger', '删除');
+            deleteBtn.type = 'button';
+            deleteBtn.addEventListener('click', async () => {
+              if (!window.confirm(`确认删除集市条目「${item.title || '未命名条目'}」吗？`)) return;
+              setButtonLoading(deleteBtn, true, '删除中...', '删除');
+              try {
+                await request(`/api/admin/market/${item.id}`, { method: 'DELETE' });
+                toast('集市条目已删除');
+                await loadMarket();
+              } catch (error) {
+                toast(error.message || '删除失败');
+              } finally {
+                setButtonLoading(deleteBtn, false, '删除中...', '删除');
+              }
+            });
+            row.appendChild(editBtn);
+            row.appendChild(deleteBtn);
+            return row;
+          },
+        },
+      ], result.data || [], '暂无集市条目。');
+
       renderPagination('marketPagination', result.pagination, (nextPage) => {
-        state.pageByTab.market = nextPage;
-        void safeLoadSection('market');
+        state.pages.market = nextPage;
+        void loadMarket().catch(handleTabError('marketTable', 'marketPagination', loadMarket));
+      });
+
+      await Promise.all([loadMarketOrders(), loadWalkOrders(), loadCareBookings()]);
+    }
+
+    async function openMarketEditor(item = null) {
+      await ensureOptionsLoaded();
+      const isCreate = !item;
+      const current = item || {
+        seller_id: state.options.users[0]?.id || '',
+        pet_id: '',
+        title: '',
+        description: '',
+        category: 'supermarket',
+        price: '',
+        images: [],
+        status: 'active',
+        type: 'food',
+        requirements: '',
+      };
+
+      openModal({
+        title: isCreate ? '新建爪主集市条目' : `编辑集市条目 · ${current.title || '未命名条目'}`,
+        subtitle: '支持上传商家商城、狗粮、主粮用品、护理养护、帮忙溜溜与配对繁育条目。',
+        confirmText: isCreate ? '创建条目' : '保存条目',
+        buildForm: () => {
+          const fragment = document.createDocumentFragment();
+          const grid = el('div', 'modal-grid');
+          grid.appendChild(field('卖家账号', selectInput('seller_id', state.options.users.map((user) => ({ value: user.id, label: `${user.username || '未命名用户'} · ${user.email || '未填邮箱'}` })), current.seller_id || current.seller?.id || '')));
+          grid.appendChild(field('关联宠物', selectInput('pet_id', [{ value: '', label: '不关联宠物' }, ...state.options.pets.map((pet) => ({ value: pet.id, label: `${pet.name || '未命名宠物'} · ${pet.type || '未分类'} · ${pet.owner?.username || '未知主人'}` }))], current.pet_id || current.pet?.id || '')));
+          grid.appendChild(field('条目标题', textInput('title', current.title || '', '请输入条目标题')));
+          grid.appendChild(field('价格', numberInput('price', current.price ?? '', '请输入价格')));
+          grid.appendChild(field('分类', selectInput('category', MARKET_CATEGORY_OPTIONS, current.category || 'supermarket')));
+          grid.appendChild(field('类型', selectInput('type', MARKET_TYPE_OPTIONS, current.type || 'food')));
+          grid.appendChild(field('状态', selectInput('status', [
+            { value: 'active', label: 'active' },
+            { value: 'inactive', label: 'inactive' },
+            { value: 'sold', label: 'sold' },
+          ], current.status || 'active')));
+          fragment.appendChild(grid);
+          fragment.appendChild(field('条目描述', textareaInput('description', current.description || '', '请输入详细描述')));
+          fragment.appendChild(field('附加要求', textareaInput('requirements', current.requirements || '', '如需填写服务要求或接单规则')));
+          fragment.appendChild(field('图片链接（逗号或换行分隔）', textareaInput('images', (current.images || []).join('\n'), '支持历史 URL，与新上传图片合并保存')));
+          fragment.appendChild(field('上传新的集市图片', (() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.name = 'image_files';
+            input.accept = 'image/*';
+            input.multiple = true;
+            return input;
+          })()));
+          return fragment;
+        },
+        onSubmit: async (form) => {
+          const imageFiles = form.querySelector('input[name="image_files"]');
+          const uploadedDataUrls = await readFilesAsDataUrls(imageFiles?.files || []);
+          const payload = {
+            seller_id: form.elements.seller_id.value,
+            pet_id: form.elements.pet_id.value || null,
+            title: form.elements.title.value.trim(),
+            description: form.elements.description.value.trim(),
+            category: form.elements.category.value,
+            price: form.elements.price.value ? Number(form.elements.price.value) : null,
+            images: [...parseList(form.elements.images.value), ...uploadedDataUrls],
+            status: form.elements.status.value,
+            type: form.elements.type.value,
+            requirements: form.elements.requirements.value.trim(),
+          };
+          if (isCreate) {
+            await request('/api/admin/market', {
+              method: 'POST',
+              body: JSON.stringify(payload),
+            });
+          } else {
+            await request(`/api/admin/market/${current.id}`, {
+              method: 'PATCH',
+              body: JSON.stringify(payload),
+            });
+          }
+          toast(isCreate ? '集市条目已创建' : '集市条目已更新');
+          await loadMarket();
+        },
       });
     }
 
-    async function loadBreeding() {
-      showLoading('breedingTable');
-      const page = state.pageByTab.breeding;
-      const result = await request(`/api/admin/breeding?page=${page}&limit=${state.pageSize}`);
-      renderTable('breedingTable', [
-        { label: '发起方', render: (item) => createStackCell(item.sender?.username || '未知', item.sender_pet?.name || '未关联宠物') },
-        { label: '接收方', render: (item) => createStackCell(item.receiver?.username || '未知', item.receiver_pet?.name || '未关联宠物') },
-        { label: '状态', render: (item) => createStatusCell(item.status || 'pending', item.status === 'accepted' || item.status === 'completed' ? 'ok' : 'pending') },
-        { label: '备注', render: (item) => textNode('span', item.notes || '无备注') },
-      ], result.data || []);
-      renderPagination('breedingPagination', result.pagination, (nextPage) => {
-        state.pageByTab.breeding = nextPage;
-        void safeLoadSection('breeding');
+    async function loadMarketOrders() {
+      showLoading('marketOrdersTable');
+      const page = state.pages.marketOrders;
+      const result = await request(`/api/admin/market-orders?page=${page}&limit=${state.pageSize}`);
+
+      renderTable('marketOrdersTable', [
+        {
+          label: '订单',
+          render: (item) => stackCell(item.orderNo || '未生成订单号', `${item.userName || '未知用户'} · ${item.petName || '未知宠物'}`, tagRow([item.city, item.source, item.status])),
+        },
+        {
+          label: '履约',
+          render: (item) => stackCell(item.sellerName || '未知商家', `${item.paymentStatus || '待付款'} · ${item.fulfillmentStatus || '待发货'}`, tagRow([`合计 ¥${item.total || 0}`])),
+        },
+        {
+          label: '操作',
+          render: (item) => {
+            const row = el('div', 'table-actions');
+            const editBtn = el('button', 'primary', '编辑');
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', () => openMarketOrderEditor(item));
+            row.appendChild(editBtn);
+            return row;
+          },
+        },
+      ], result.data || [], '暂无商城订单。');
+
+      renderPagination('marketOrdersPagination', result.pagination, (nextPage) => {
+        state.pages.marketOrders = nextPage;
+        void loadMarketOrders().catch(handleTabError('marketOrdersTable', 'marketOrdersPagination', loadMarketOrders));
       });
     }
 
-    async function loadCurrentTab() {
-      if (state.tab === 'overview') return loadOverview();
-      if (state.tab === 'users') return loadUsers();
-      if (state.tab === 'pets') return loadPets();
-      if (state.tab === 'market') return loadMarket();
-      return loadBreeding();
-    }
-
-    async function safeLoadSection(tabName) {
-      try {
-        if (tabName) state.tab = tabName;
-        await loadCurrentTab();
-      } catch (error) {
-        if (state.tab === 'overview') {
-          ['recentUsers', 'recentPets', 'recentMessages'].forEach((containerId) => {
-            const container = $(containerId);
-            clearNode(container);
-            container.appendChild(createErrorState(error.message || '后台数据加载失败。', () => {
-              void safeLoadSection('overview');
-            }));
+    function openMarketOrderEditor(item = null) {
+      const isCreate = !item;
+      const current = item || {};
+      openModal({
+        title: isCreate ? '新建商城订单' : `编辑商城订单 · ${current.orderNo || ''}`,
+        subtitle: '维护购物车结算后的订单状态、商家履约和售后信息。',
+        confirmText: isCreate ? '创建订单' : '保存订单',
+        buildForm: () => {
+          const fragment = document.createDocumentFragment();
+          const grid = el('div', 'modal-grid');
+          grid.appendChild(field('订单号', textInput('orderNo', current.orderNo || '', '例如：PUPY-MO-240999')));
+          grid.appendChild(field('用户名称', textInput('userName', current.userName || '', '请输入用户名称')));
+          grid.appendChild(field('用户邮箱', textInput('userEmail', current.userEmail || '', '请输入用户邮箱')));
+          grid.appendChild(field('宠物名称', textInput('petName', current.petName || '', '请输入宠物名称')));
+          grid.appendChild(field('商家名称', textInput('sellerName', current.sellerName || '', '请输入商家名称')));
+          grid.appendChild(field('所在城市', textInput('city', current.city || '', '请输入城市')));
+          grid.appendChild(field('订单状态', selectInput('status', ORDER_STATUS_OPTIONS, current.status || '待处理')));
+          grid.appendChild(field('支付状态', textInput('paymentStatus', current.paymentStatus || '', '例如：已付款')));
+          grid.appendChild(field('履约状态', textInput('fulfillmentStatus', current.fulfillmentStatus || '', '例如：待发货')));
+          grid.appendChild(field('合计金额', numberInput('total', current.total ?? '', '请输入金额')));
+          grid.appendChild(field('商品数量', numberInput('quantity', current.quantity ?? '', '请输入件数')));
+          grid.appendChild(field('来源模块', textInput('source', current.source || '主粮用品', '例如：主粮用品')));
+          fragment.appendChild(grid);
+          fragment.appendChild(field('商品明细（每行：标题|数量|单价）', textareaInput('items', serializeOrderItems(current.items || []), '高适口主粮|2|199')));
+          fragment.appendChild(field('备注', textareaInput('note', current.note || '', '售后、客服、配送等备注')));
+          return fragment;
+        },
+        onSubmit: async (form) => {
+          await request(isCreate ? '/api/admin/market-orders' : `/api/admin/market-orders/${current.id}`, {
+            method: isCreate ? 'POST' : 'PATCH',
+            body: JSON.stringify({
+              orderNo: form.elements.orderNo.value.trim(),
+              userName: form.elements.userName.value.trim(),
+              userEmail: form.elements.userEmail.value.trim(),
+              petName: form.elements.petName.value.trim(),
+              sellerName: form.elements.sellerName.value.trim(),
+              city: form.elements.city.value.trim(),
+              status: form.elements.status.value,
+              paymentStatus: form.elements.paymentStatus.value.trim(),
+              fulfillmentStatus: form.elements.fulfillmentStatus.value.trim(),
+              total: Number(form.elements.total.value || 0),
+              quantity: Number(form.elements.quantity.value || 1),
+              source: form.elements.source.value.trim(),
+              items: parseOrderItems(form.elements.items.value),
+              note: form.elements.note.value.trim(),
+            }),
           });
-          return;
-        }
+          toast(isCreate ? '商城订单已创建' : '商城订单已更新');
+          await loadMarketOrders();
+        },
+      });
+    }
 
-        const containerId = TAB_CONTENT[state.tab];
-        const paginationId = `${state.tab}Pagination`;
-        showTableError(containerId, paginationId, error.message || '当前列表加载失败。', () => {
-          void safeLoadSection(state.tab);
+    async function loadWalkOrders() {
+      showLoading('walkOrdersTable');
+      const page = state.pages.walkOrders;
+      const result = await request(`/api/admin/walk-orders?page=${page}&limit=${state.pageSize}`);
+
+      renderTable('walkOrdersTable', [
+        {
+          label: '订单',
+          render: (item) => stackCell(item.orderNo || '未生成单号', `${item.userName || '未知用户'} · ${item.petName || '未知宠物'}`, tagRow([item.city, item.serviceZone, item.status])),
+        },
+        {
+          label: '履约',
+          render: (item) => stackCell(item.walkerName || '待分配遛遛师', `${item.reviewStatus || '待审核'} · ${item.durationMinutes || 0} 分钟`, tagRow([`¥${item.price || 0}`, formatDateTime(item.scheduledAt)])),
+        },
+        {
+          label: '操作',
+          render: (item) => {
+            const row = el('div', 'table-actions');
+            const editBtn = el('button', 'primary', '编辑');
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', () => openWalkOrderEditor(item));
+            row.appendChild(editBtn);
+            return row;
+          },
+        },
+      ], result.data || [], '暂无帮忙溜溜订单。');
+
+      renderPagination('walkOrdersPagination', result.pagination, (nextPage) => {
+        state.pages.walkOrders = nextPage;
+        void loadWalkOrders().catch(handleTabError('walkOrdersTable', 'walkOrdersPagination', loadWalkOrders));
+      });
+    }
+
+    function openWalkOrderEditor(item = null) {
+      const isCreate = !item;
+      const current = item || {};
+      openModal({
+        title: isCreate ? '新建帮忙溜溜订单' : `编辑遛遛订单 · ${current.orderNo || ''}`,
+        subtitle: '维护遛遛师、服务范围、审核状态和具体履约时间。',
+        confirmText: isCreate ? '创建订单' : '保存订单',
+        buildForm: () => {
+          const fragment = document.createDocumentFragment();
+          const grid = el('div', 'modal-grid');
+          grid.appendChild(field('订单号', textInput('orderNo', current.orderNo || '', '例如：PUPY-WK-240999')));
+          grid.appendChild(field('用户名称', textInput('userName', current.userName || '', '请输入用户名称')));
+          grid.appendChild(field('用户邮箱', textInput('userEmail', current.userEmail || '', '请输入用户邮箱')));
+          grid.appendChild(field('宠物名称', textInput('petName', current.petName || '', '请输入宠物名称')));
+          grid.appendChild(field('遛遛师', textInput('walkerName', current.walkerName || '', '请输入服务者名称')));
+          grid.appendChild(field('城市', textInput('city', current.city || '', '请输入城市')));
+          grid.appendChild(field('服务范围', textInput('serviceZone', current.serviceZone || '', '例如：徐汇滨江')));
+          grid.appendChild(field('订单状态', textInput('status', current.status || '待确认', '例如：已接单')));
+          grid.appendChild(field('审核状态', selectInput('reviewStatus', REVIEW_STATUS_OPTIONS, current.reviewStatus || '待审核')));
+          grid.appendChild(field('预约时间', datetimeInput('scheduledAt', current.scheduledAt || '')));
+          grid.appendChild(field('遛遛时长（分钟）', numberInput('durationMinutes', current.durationMinutes ?? '', '请输入分钟数')));
+          grid.appendChild(field('订单金额', numberInput('price', current.price ?? '', '请输入金额')));
+          fragment.appendChild(grid);
+          fragment.appendChild(field('备注', textareaInput('note', current.note || '', '填写服务说明或客服备注')));
+          return fragment;
+        },
+        onSubmit: async (form) => {
+          await request(isCreate ? '/api/admin/walk-orders' : `/api/admin/walk-orders/${current.id}`, {
+            method: isCreate ? 'POST' : 'PATCH',
+            body: JSON.stringify({
+              orderNo: form.elements.orderNo.value.trim(),
+              userName: form.elements.userName.value.trim(),
+              userEmail: form.elements.userEmail.value.trim(),
+              petName: form.elements.petName.value.trim(),
+              walkerName: form.elements.walkerName.value.trim(),
+              city: form.elements.city.value.trim(),
+              serviceZone: form.elements.serviceZone.value.trim(),
+              status: form.elements.status.value.trim(),
+              reviewStatus: form.elements.reviewStatus.value,
+              scheduledAt: toIsoValue(form.elements.scheduledAt.value, current.scheduledAt || ''),
+              durationMinutes: Number(form.elements.durationMinutes.value || 60),
+              price: Number(form.elements.price.value || 0),
+              note: form.elements.note.value.trim(),
+            }),
+          });
+          toast(isCreate ? '帮忙溜溜订单已创建' : '帮忙溜溜订单已更新');
+          await loadWalkOrders();
+        },
+      });
+    }
+
+    async function loadCareBookings() {
+      showLoading('careBookingsTable');
+      const page = state.pages.careBookings;
+      const result = await request(`/api/admin/care-bookings?page=${page}&limit=${state.pageSize}`);
+
+      renderTable('careBookingsTable', [
+        {
+          label: '预约',
+          render: (item) => stackCell(item.bookingNo || '未生成预约号', `${item.userName || '未知用户'} · ${item.petName || '未知宠物'}`, tagRow([item.city, item.serviceName, item.status])),
+        },
+        {
+          label: '门店 / 审核',
+          render: (item) => stackCell(item.merchantName || '未知商家', `${item.reviewStatus || '待审核'} · ${formatDateTime(item.scheduledAt)}`, tagRow([`¥${item.price || 0}`])),
+        },
+        {
+          label: '操作',
+          render: (item) => {
+            const row = el('div', 'table-actions');
+            const editBtn = el('button', 'primary', '编辑');
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', () => openCareBookingEditor(item));
+            row.appendChild(editBtn);
+            return row;
+          },
+        },
+      ], result.data || [], '暂无护理预约。');
+
+      renderPagination('careBookingsPagination', result.pagination, (nextPage) => {
+        state.pages.careBookings = nextPage;
+        void loadCareBookings().catch(handleTabError('careBookingsTable', 'careBookingsPagination', loadCareBookings));
+      });
+    }
+
+    function openCareBookingEditor(item = null) {
+      const isCreate = !item;
+      const current = item || {};
+      openModal({
+        title: isCreate ? '新建护理预约' : `编辑护理预约 · ${current.bookingNo || ''}`,
+        subtitle: '维护门店、预约项目、审核状态与到店安排。',
+        confirmText: isCreate ? '创建预约' : '保存预约',
+        buildForm: () => {
+          const fragment = document.createDocumentFragment();
+          const grid = el('div', 'modal-grid');
+          grid.appendChild(field('预约号', textInput('bookingNo', current.bookingNo || '', '例如：PUPY-CR-240999')));
+          grid.appendChild(field('用户名称', textInput('userName', current.userName || '', '请输入用户名称')));
+          grid.appendChild(field('用户邮箱', textInput('userEmail', current.userEmail || '', '请输入用户邮箱')));
+          grid.appendChild(field('宠物名称', textInput('petName', current.petName || '', '请输入宠物名称')));
+          grid.appendChild(field('门店名称', textInput('merchantName', current.merchantName || '', '请输入门店名称')));
+          grid.appendChild(field('城市', textInput('city', current.city || '', '请输入城市')));
+          grid.appendChild(field('护理项目', textInput('serviceName', current.serviceName || '', '例如：精修护理')));
+          grid.appendChild(field('预约状态', textInput('status', current.status || '待确认', '例如：已确认')));
+          grid.appendChild(field('审核状态', selectInput('reviewStatus', REVIEW_STATUS_OPTIONS, current.reviewStatus || '待审核')));
+          grid.appendChild(field('到店时间', datetimeInput('scheduledAt', current.scheduledAt || '')));
+          grid.appendChild(field('预约金额', numberInput('price', current.price ?? '', '请输入金额')));
+          fragment.appendChild(grid);
+          fragment.appendChild(field('备注', textareaInput('note', current.note || '', '填写门店安排或客服备注')));
+          return fragment;
+        },
+        onSubmit: async (form) => {
+          await request(isCreate ? '/api/admin/care-bookings' : `/api/admin/care-bookings/${current.id}`, {
+            method: isCreate ? 'POST' : 'PATCH',
+            body: JSON.stringify({
+              bookingNo: form.elements.bookingNo.value.trim(),
+              userName: form.elements.userName.value.trim(),
+              userEmail: form.elements.userEmail.value.trim(),
+              petName: form.elements.petName.value.trim(),
+              merchantName: form.elements.merchantName.value.trim(),
+              city: form.elements.city.value.trim(),
+              serviceName: form.elements.serviceName.value.trim(),
+              status: form.elements.status.value.trim(),
+              reviewStatus: form.elements.reviewStatus.value,
+              scheduledAt: toIsoValue(form.elements.scheduledAt.value, current.scheduledAt || ''),
+              price: Number(form.elements.price.value || 0),
+              note: form.elements.note.value.trim(),
+            }),
+          });
+          toast(isCreate ? '护理预约已创建' : '护理预约已更新');
+          await loadCareBookings();
+        },
+      });
+    }
+
+    async function loadLove() {
+      showLoading('breedingTable');
+      showLoading('matchesTable');
+      const breedingPage = state.pages.breeding;
+      const matchesPage = state.pages.matches;
+      const breedingStatus = $('breedingStatusFilter').value;
+      const matchesStatus = $('matchesStatusFilter').value;
+
+      const [breedingResult, matchesResult] = await Promise.all([
+        request(`/api/admin/breeding?page=${breedingPage}&limit=${state.pageSize}&status=${encodeURIComponent(breedingStatus)}`),
+        request(`/api/admin/matches?page=${matchesPage}&limit=${state.pageSize}&status=${encodeURIComponent(matchesStatus)}`),
+      ]);
+
+      renderTable('breedingTable', [
+        {
+          label: '发起方',
+          render: (item) => stackCell(item.sender?.username || '未知', item.sender?.email || '未填邮箱', tagRow([item.sender_pet?.name || '未关联宠物']))
+        },
+        {
+          label: '接收方',
+          render: (item) => stackCell(item.receiver?.username || '未知', item.receiver?.email || '未填邮箱', tagRow([item.receiver_pet?.name || '未关联宠物']))
+        },
+        {
+          label: '状态 / 备注',
+          render: (item) => stackCell(item.status || 'pending', item.notes || '暂无备注'),
+        },
+        {
+          label: '操作',
+          render: (item) => {
+            const row = el('div', 'table-actions');
+            const reviewBtn = el('button', 'primary', '审核处理');
+            reviewBtn.type = 'button';
+            reviewBtn.addEventListener('click', () => openBreedingEditor(item));
+            row.appendChild(reviewBtn);
+            return row;
+          },
+        },
+      ], breedingResult.data || [], '暂无繁育请求。');
+
+      renderPagination('breedingPagination', breedingResult.pagination, (nextPage) => {
+        state.pages.breeding = nextPage;
+        void loadLove().catch(handleTabError('breedingTable', 'breedingPagination', loadLove));
+      });
+
+      renderTable('matchesTable', [
+        {
+          label: '匹配双方',
+          render: (item) => stackCell(`${item.user_a?.username || '未知'} · ${item.pet_a?.name || '宠物 A'}`, `${item.user_b?.username || '未知'} · ${item.pet_b?.name || '宠物 B'}`, tagRow([item.compatibility_score ? `兼容度 ${item.compatibility_score}` : '兼容度待计算']))
+        },
+        {
+          label: '状态',
+          render: (item) => {
+            const tone = item.status === 'matched' ? 'ok' : item.status === 'rejected' ? 'danger' : 'pending';
+            return chip(item.status || 'pending', tone);
+          },
+        },
+        {
+          label: '创建时间',
+          render: (item) => formatDateTime(item.created_at),
+        },
+        {
+          label: '操作',
+          render: (item) => {
+            const row = el('div', 'table-actions');
+            const reviewBtn = el('button', 'primary', '调整状态');
+            reviewBtn.type = 'button';
+            reviewBtn.addEventListener('click', () => openMatchEditor(item));
+            row.appendChild(reviewBtn);
+            return row;
+          },
+        },
+      ], matchesResult.data || [], '暂无匹配记录。');
+
+      renderPagination('matchesPagination', matchesResult.pagination, (nextPage) => {
+        state.pages.matches = nextPage;
+        void loadLove().catch(handleTabError('matchesTable', 'matchesPagination', loadLove));
+      });
+
+      await loadPetLove();
+    }
+
+    function openBreedingEditor(item) {
+      openModal({
+        title: '审核繁育请求',
+        subtitle: '更新请求状态并给运营备注，便于后续追踪。',
+        buildForm: () => {
+          const fragment = document.createDocumentFragment();
+          fragment.appendChild(field('请求状态', selectInput('status', [
+            { value: 'pending', label: 'pending' },
+            { value: 'accepted', label: 'accepted' },
+            { value: 'rejected', label: 'rejected' },
+            { value: 'completed', label: 'completed' },
+          ], item.status || 'pending')));
+          fragment.appendChild(field('运营备注', textareaInput('notes', item.notes || '', '填写审核意见、线下沟通情况或补充说明')));
+          return fragment;
+        },
+        onSubmit: async (form) => {
+          await request(`/api/admin/breeding/${item.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              status: form.elements.status.value,
+              notes: form.elements.notes.value.trim(),
+            }),
+          });
+          toast('繁育请求已更新');
+          await loadLove();
+        },
+      });
+    }
+
+    function openMatchEditor(item) {
+      openModal({
+        title: '调整匹配状态',
+        subtitle: '更新宠物恋爱匹配结果，用于运营干预和审核回溯。',
+        buildForm: () => field('匹配状态', selectInput('status', [
+          { value: 'pending', label: 'pending' },
+          { value: 'matched', label: 'matched' },
+          { value: 'rejected', label: 'rejected' },
+        ], item.status || 'pending')),
+        onSubmit: async (form) => {
+          await request(`/api/admin/matches/${item.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: form.elements.status.value }),
+          });
+          toast('匹配状态已更新');
+          await loadLove();
+        },
+      });
+    }
+
+    async function loadPetLove() {
+      showLoading('petLoveTable');
+      const page = state.pages.petLove;
+      const result = await request(`/api/admin/pet-love?page=${page}&limit=${state.pageSize}`);
+
+      renderTable('petLoveTable', [
+        {
+          label: '恋爱对象',
+          render: (item) => stackCell(`${item.petAName || '宠物 A'} × ${item.petBName || '宠物 B'}`, `${item.ownerAName || '主人 A'} × ${item.ownerBName || '主人 B'}`, tagRow([item.city, item.status, item.reviewStatus])),
+        },
+        {
+          label: '阶段 / 热度',
+          render: (item) => stackCell(item.romanceStage || '资料互看中', `兼容度 ${(Number(item.compatibilityScore || 0) * 100).toFixed(0)}%`, tagRow([item.note || '暂无备注'])),
+        },
+        {
+          label: '操作',
+          render: (item) => {
+            const row = el('div', 'table-actions');
+            const editBtn = el('button', 'primary', '编辑');
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', () => openPetLoveEditor(item));
+            row.appendChild(editBtn);
+            return row;
+          },
+        },
+      ], result.data || [], '暂无恋爱运营记录。');
+
+      renderPagination('petLovePagination', result.pagination, (nextPage) => {
+        state.pages.petLove = nextPage;
+        void loadPetLove().catch(handleTabError('petLoveTable', 'petLovePagination', loadPetLove));
+      });
+    }
+
+    function openPetLoveEditor(item = null) {
+      const isCreate = !item;
+      const current = item || {};
+      openModal({
+        title: isCreate ? '新建恋爱运营记录' : `编辑恋爱记录 · ${current.petAName || ''}`,
+        subtitle: '补充匹配之外的恋爱阶段、热度、人工复核与运营备注。',
+        confirmText: isCreate ? '创建记录' : '保存记录',
+        buildForm: () => {
+          const fragment = document.createDocumentFragment();
+          const grid = el('div', 'modal-grid');
+          grid.appendChild(field('宠物 A', textInput('petAName', current.petAName || '', '请输入宠物 A')));
+          grid.appendChild(field('宠物 B', textInput('petBName', current.petBName || '', '请输入宠物 B')));
+          grid.appendChild(field('主人 A', textInput('ownerAName', current.ownerAName || '', '请输入主人 A')));
+          grid.appendChild(field('主人 B', textInput('ownerBName', current.ownerBName || '', '请输入主人 B')));
+          grid.appendChild(field('城市', textInput('city', current.city || '', '请输入城市')));
+          grid.appendChild(field('恋爱状态', selectInput('status', LOVE_STATUS_OPTIONS, current.status || '待匹配')));
+          grid.appendChild(field('审核状态', selectInput('reviewStatus', REVIEW_STATUS_OPTIONS, current.reviewStatus || '待审核')));
+          grid.appendChild(field('当前阶段', textInput('romanceStage', current.romanceStage || '', '例如：双向右滑')));
+          grid.appendChild(field('兼容度（0-1）', numberInput('compatibilityScore', current.compatibilityScore ?? '', '例如：0.86')));
+          fragment.appendChild(grid);
+          fragment.appendChild(field('备注', textareaInput('note', current.note || '', '填写运营观察、人工推荐原因或风控备注')));
+          return fragment;
+        },
+        onSubmit: async (form) => {
+          await request(isCreate ? '/api/admin/pet-love' : `/api/admin/pet-love/${current.id}`, {
+            method: isCreate ? 'POST' : 'PATCH',
+            body: JSON.stringify({
+              petAName: form.elements.petAName.value.trim(),
+              petBName: form.elements.petBName.value.trim(),
+              ownerAName: form.elements.ownerAName.value.trim(),
+              ownerBName: form.elements.ownerBName.value.trim(),
+              city: form.elements.city.value.trim(),
+              status: form.elements.status.value,
+              reviewStatus: form.elements.reviewStatus.value,
+              romanceStage: form.elements.romanceStage.value.trim(),
+              compatibilityScore: Number(form.elements.compatibilityScore.value || 0),
+              note: form.elements.note.value.trim(),
+            }),
+          });
+          toast(isCreate ? '恋爱记录已创建' : '恋爱记录已更新');
+          await loadPetLove();
+        },
+      });
+    }
+
+    async function loadDiaries() {
+      showLoading('diariesTable');
+      const page = state.pages.diaries;
+      const keyword = $('diariesKeyword').value.trim();
+      const result = await request(`/api/admin/diaries?page=${page}&limit=${state.pageSize}&keyword=${encodeURIComponent(keyword)}`);
+
+      renderTable('diariesTable', [
+        {
+          label: '标题 / 作者',
+          render: (item) => stackCell(item.title || '未命名日记', `${item.user?.username || '未知用户'} · ${item.pet?.name || '未知宠物'}`, tagRow(item.tags || []))
+        },
+        {
+          label: '内容摘要',
+          render: (item) => stackCell(item.content || '暂无内容', `情绪：${item.mood || '未填写'} · ${item.is_public ? '当前公开' : '当前隐藏'}`),
+        },
+        {
+          label: '时间',
+          render: (item) => formatDateTime(item.created_at),
+        },
+        {
+          label: '操作',
+          render: (item) => {
+            const row = el('div', 'table-actions');
+            const reviewBtn = el('button', 'primary', '审核');
+            reviewBtn.type = 'button';
+            reviewBtn.addEventListener('click', () => openDiaryEditor(item));
+            row.appendChild(reviewBtn);
+            return row;
+          },
+        },
+      ], result.data || [], '暂无日记数据。');
+
+      renderPagination('diariesPagination', result.pagination, (nextPage) => {
+        state.pages.diaries = nextPage;
+        void loadDiaries().catch(handleTabError('diariesTable', 'diariesPagination', loadDiaries));
+      });
+    }
+
+    function openDiaryEditor(item) {
+      openModal({
+        title: `审核日记 · ${item.title || '未命名日记'}`,
+        subtitle: '可直接调整公开状态、标签与情绪字段。',
+        buildForm: () => {
+          const fragment = document.createDocumentFragment();
+          fragment.appendChild(field('公开展示', checkboxInput('is_public', item.is_public), { inlineCheck: true }));
+          fragment.appendChild(field('情绪', textInput('mood', item.mood || '', '例如：开心、平静、兴奋')));
+          fragment.appendChild(field('标签（逗号或换行分隔）', textareaInput('tags', (item.tags || []).join('\n'), '例如：玩耍\n雨天散步')));
+          return fragment;
+        },
+        onSubmit: async (form) => {
+          await request(`/api/admin/diaries/${item.id}/review`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              is_public: form.elements.is_public.checked,
+              mood: form.elements.mood.value.trim(),
+              tags: parseList(form.elements.tags.value),
+            }),
+          });
+          toast('日记审核状态已更新');
+          await loadDiaries();
+        },
+      });
+    }
+
+    async function loadMessages() {
+      showLoading('messagesTable');
+      const page = state.pages.messages;
+      const keyword = $('messagesKeyword').value.trim();
+      const result = await request(`/api/admin/messages?page=${page}&limit=${state.pageSize}&keyword=${encodeURIComponent(keyword)}`);
+
+      renderTable('messagesTable', [
+        {
+          label: '聊天关系',
+          render: (item) => stackCell(item.sender?.username || '未知发送方', item.receiver?.username || '未知接收方', chip(item.is_read ? '已读' : '未读', item.is_read ? 'ok' : 'pending'))
+        },
+        {
+          label: '消息内容',
+          render: (item) => stackCell(item.content || '空消息', `会话：${item.chat?.id || '无会话 ID'} · 最后消息：${item.chat?.last_message || '暂无'}`),
+        },
+        {
+          label: '时间',
+          render: (item) => formatDateTime(item.created_at),
+        },
+      ], result.data || [], '暂无聊天消息。');
+
+      renderPagination('messagesPagination', result.pagination, (nextPage) => {
+        state.pages.messages = nextPage;
+        void loadMessages().catch(handleTabError('messagesTable', 'messagesPagination', loadMessages));
+      });
+
+      await Promise.all([loadOwnerChats(), loadPetChats()]);
+    }
+
+    async function loadOwnerChats() {
+      showLoading('ownerChatsTable');
+      const page = state.pages.ownerChats;
+      const result = await request(`/api/admin/chat-sessions?page=${page}&limit=${state.pageSize}&type=owner`);
+
+      renderTable('ownerChatsTable', [
+        {
+          label: '会话',
+          render: (item) => stackCell(item.title || item.sessionNo || '未命名会话', (item.participants || []).join(' · ') || '暂无参与者', tagRow([item.city, item.status, `${item.unreadCount || 0} 条未读`])),
+        },
+        {
+          label: '最近内容',
+          render: (item) => stackCell(item.latestSnippet || '暂无内容', `${item.relatedPets?.join(' / ') || '未关联宠物'} · ${formatDateTime(item.updatedAt)}`),
+        },
+        {
+          label: '操作',
+          render: (item) => {
+            const row = el('div', 'table-actions');
+            const editBtn = el('button', 'primary', '编辑');
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', () => openChatSessionEditor(item, 'owner'));
+            row.appendChild(editBtn);
+            return row;
+          },
+        },
+      ], result.data || [], '暂无主人聊天会话。');
+
+      renderPagination('ownerChatsPagination', result.pagination, (nextPage) => {
+        state.pages.ownerChats = nextPage;
+        void loadOwnerChats().catch(handleTabError('ownerChatsTable', 'ownerChatsPagination', loadOwnerChats));
+      });
+    }
+
+    async function loadPetChats() {
+      showLoading('petChatsTable');
+      const page = state.pages.petChats;
+      const result = await request(`/api/admin/chat-sessions?page=${page}&limit=${state.pageSize}&type=pet`);
+
+      renderTable('petChatsTable', [
+        {
+          label: '会话',
+          render: (item) => stackCell(item.title || item.sessionNo || '未命名会话', (item.relatedPets || []).join(' × ') || '暂无宠物', tagRow([item.city, item.status, `${item.unreadCount || 0} 条未读`])),
+        },
+        {
+          label: '最近内容',
+          render: (item) => stackCell(item.latestSnippet || '暂无内容', `${item.participants?.join(' / ') || '未记录参与方'} · ${formatDateTime(item.updatedAt)}`),
+        },
+        {
+          label: '操作',
+          render: (item) => {
+            const row = el('div', 'table-actions');
+            const editBtn = el('button', 'primary', '编辑');
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', () => openChatSessionEditor(item, 'pet'));
+            row.appendChild(editBtn);
+            return row;
+          },
+        },
+      ], result.data || [], '暂无宠物聊天会话。');
+
+      renderPagination('petChatsPagination', result.pagination, (nextPage) => {
+        state.pages.petChats = nextPage;
+        void loadPetChats().catch(handleTabError('petChatsTable', 'petChatsPagination', loadPetChats));
+      });
+    }
+
+    function openChatSessionEditor(item = null, forcedType = 'owner') {
+      const isCreate = !item;
+      const current = item || { type: forcedType };
+      openModal({
+        title: isCreate ? `新建${forcedType === 'pet' ? '宠物' : '主人'}聊天会话` : `编辑会话 · ${current.sessionNo || ''}`,
+        subtitle: '维护主人聊天与宠物私语的展示态、未读数和消息样本。',
+        confirmText: isCreate ? '创建会话' : '保存会话',
+        buildForm: () => {
+          const fragment = document.createDocumentFragment();
+          const grid = el('div', 'modal-grid');
+          grid.appendChild(field('会话编号', textInput('sessionNo', current.sessionNo || '', '例如：PUPY-CH-240999')));
+          grid.appendChild(field('会话类型', selectInput('type', [{ value: 'owner', label: 'owner / 主人聊天' }, { value: 'pet', label: 'pet / 宠物聊天' }], current.type || forcedType)));
+          grid.appendChild(field('会话标题', textInput('title', current.title || '', '请输入会话标题')));
+          grid.appendChild(field('城市', textInput('city', current.city || '', '请输入城市')));
+          grid.appendChild(field('会话状态', selectInput('status', CHAT_STATUS_OPTIONS, current.status || '活跃')));
+          grid.appendChild(field('未读数量', numberInput('unreadCount', current.unreadCount ?? '', '请输入未读数')));
+          fragment.appendChild(grid);
+          fragment.appendChild(field('参与者（逗号或换行分隔）', textareaInput('participants', (current.participants || []).join('\n'), '例如：苏栗\n白溪')));
+          fragment.appendChild(field('关联宠物（逗号或换行分隔）', textareaInput('relatedPets', (current.relatedPets || []).join('\n'), '例如：奶油\n云朵')));
+          fragment.appendChild(field('最近摘要', textareaInput('latestSnippet', current.latestSnippet || '', '请输入最近一句摘要')));
+          fragment.appendChild(field('消息样本（每行：发送方|role|内容）', textareaInput('messages', serializeChatMessages(current.messages || []), '苏栗|owner|周末一起遛遛吧')));
+          return fragment;
+        },
+        onSubmit: async (form) => {
+          const type = form.elements.type.value === 'pet' ? 'pet' : 'owner';
+          await request(isCreate ? '/api/admin/chat-sessions' : `/api/admin/chat-sessions/${current.id}`, {
+            method: isCreate ? 'POST' : 'PATCH',
+            body: JSON.stringify({
+              sessionNo: form.elements.sessionNo.value.trim(),
+              type,
+              title: form.elements.title.value.trim(),
+              city: form.elements.city.value.trim(),
+              status: form.elements.status.value,
+              unreadCount: Number(form.elements.unreadCount.value || 0),
+              participants: parseList(form.elements.participants.value),
+              relatedPets: parseList(form.elements.relatedPets.value),
+              latestSnippet: form.elements.latestSnippet.value.trim(),
+              messages: parseChatMessages(form.elements.messages.value),
+            }),
+          });
+          toast(isCreate ? '聊天会话已创建' : '聊天会话已更新');
+          await Promise.all([loadOwnerChats(), loadPetChats()]);
+        },
+      });
+    }
+
+    async function loadNotifications() {
+      showLoading('notificationsTable');
+      await ensureOptionsLoaded();
+      const page = state.pages.notifications;
+      const result = await request(`/api/admin/notifications?page=${page}&limit=${state.pageSize}`);
+
+      renderTable('notificationsTable', [
+        {
+          label: '接收人',
+          render: (item) => stackCell(item.user?.username || '未知用户', item.user?.email || '未填邮箱', chip(item.type || 'system')),
+        },
+        {
+          label: '通知内容',
+          render: (item) => stackCell(item.message || '空通知', `创建时间：${formatDateTime(item.created_at)}`),
+        },
+        {
+          label: '状态',
+          render: (item) => chip(item.is_read ? '已读' : '未读', item.is_read ? 'ok' : 'pending'),
+        },
+        {
+          label: '操作',
+          render: (item) => {
+            const row = el('div', 'table-actions');
+            const editBtn = el('button', 'ghost', '编辑');
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', () => openNotificationEditor(item));
+            row.appendChild(editBtn);
+            return row;
+          },
+        },
+      ], result.data || [], '暂无通知记录。');
+
+      renderPagination('notificationsPagination', result.pagination, (nextPage) => {
+        state.pages.notifications = nextPage;
+        void loadNotifications().catch(handleTabError('notificationsTable', 'notificationsPagination', loadNotifications));
+      });
+    }
+
+    function openNotificationEditor(item) {
+      openModal({
+        title: '编辑系统通知',
+        subtitle: '可调整通知文案、类型与已读状态。',
+        buildForm: () => {
+          const fragment = document.createDocumentFragment();
+          fragment.appendChild(field('通知类型', selectInput('type', [
+            { value: 'system', label: 'system' },
+            { value: 'message', label: 'message' },
+            { value: 'match', label: 'match' },
+            { value: 'breeding', label: 'breeding' },
+            { value: 'like', label: 'like' },
+          ], item.type || 'system')));
+          fragment.appendChild(field('已读状态', checkboxInput('is_read', item.is_read), { inlineCheck: true }));
+          fragment.appendChild(field('通知内容', textareaInput('message', item.message || '', '请输入新的通知文案')));
+          return fragment;
+        },
+        onSubmit: async (form) => {
+          await request(`/api/admin/notifications/${item.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              type: form.elements.type.value,
+              is_read: form.elements.is_read.checked,
+              message: form.elements.message.value.trim(),
+            }),
+          });
+          toast('通知内容已更新');
+          await loadNotifications();
+        },
+      });
+    }
+
+    async function sendNotification() {
+      await ensureOptionsLoaded();
+      const sendBtn = $('sendNotificationBtn');
+      const target = $('notificationTarget').value;
+      const userIds = multiSelectValues($('notificationUsers'));
+      const message = $('notificationMessage').value.trim();
+      const type = $('notificationType').value;
+
+      setButtonLoading(sendBtn, true, '发送中...', '发送通知');
+      try {
+        await request('/api/admin/notifications', {
+          method: 'POST',
+          body: JSON.stringify({
+            target,
+            user_ids: userIds,
+            message,
+            type,
+          }),
         });
+        $('notificationMessage').value = '';
+        toast('系统通知已发送');
+        await loadNotifications();
+      } catch (error) {
+        toast(error.message || '发送通知失败');
+      } finally {
+        setButtonLoading(sendBtn, false, '发送中...', '发送通知');
+      }
+    }
+
+    async function loadLoginActivity() {
+      showLoading('loginTable');
+      const page = state.pages.login;
+      const keyword = $('loginKeyword').value.trim();
+      const result = await request(`/api/admin/login-activity?page=${page}&limit=${state.pageSize}&keyword=${encodeURIComponent(keyword)}`);
+      const data = result.data;
+
+      const summaryContainer = $('loginSummary');
+      clearNode(summaryContainer);
+      const summaryGrid = el('div', 'summary-grid');
+      [
+        ['最近 24 小时活跃', data.summary.last24h],
+        ['最近 7 天活跃', data.summary.last7d],
+        ['已审核用户', data.summary.verified],
+        ['用户总数', data.summary.total],
+      ].forEach(([label, value]) => {
+        const card = el('div', 'summary-card');
+        card.appendChild(el('small', '', label));
+        card.appendChild(el('strong', '', value));
+        summaryGrid.appendChild(card);
+      });
+      summaryContainer.appendChild(summaryGrid);
+
+      renderTable('loginTable', [
+        {
+          label: '用户',
+          render: (user) => stackCell(user.username || '未命名用户', user.email || '未填邮箱', userVerificationChip(user)),
+        },
+        {
+          label: '所在城市 / 资料',
+          render: (user) => stackCell(user.resident_city || '未填写城市', `${user.mbti || '未填 MBTI'} · ${user.signature || '暂无签名'}`),
+        },
+        {
+          label: '最近登录',
+          render: (user) => stackCell(formatDateTime(user.last_login), `创建时间：${formatDateTime(user.created_at)}`),
+        },
+      ], data.list || [], '暂无登录追踪数据。');
+
+      renderPagination('loginPagination', data.pagination, (nextPage) => {
+        state.pages.login = nextPage;
+        void loadLoginActivity().catch(handleTabError('loginTable', 'loginPagination', loadLoginActivity));
+      });
+    }
+
+    async function loadRuntimeConfig() {
+      showLoading('realmsContent');
+      const result = await request('/api/admin/runtime-config');
+      state.runtimeConfig = result.data;
+      const container = $('realmsContent');
+      clearNode(container);
+
+      if (!state.runtimeConfig?.realms?.length) {
+        container.appendChild(createEmptyState('暂无云游地图配置。'));
+        return;
+      }
+
+      const grid = el('div', 'realm-grid');
+      state.runtimeConfig.realms.forEach((realm) => {
+        const card = el('article', 'realm-card');
+        card.dataset.realmId = realm.id;
+        card.appendChild(el('h4', '', realm.name || '未命名地图'));
+        card.appendChild(el('p', '', realm.description || '暂无地图描述'));
+        card.appendChild(field('地图名称', textInput('name', realm.name || '', '请输入地图名称')));
+        card.appendChild(field('地图描述', textareaInput('description', realm.description || '', '请输入地图描述')));
+        card.appendChild(field('在线人数', numberInput('onlineCount', realm.onlineCount ?? 0, '请输入在线人数')));
+        card.appendChild(field('启用状态', checkboxInput('active', realm.active !== false), { inlineCheck: true }));
+        card.appendChild(field('加载短句（每行一条）', textareaInput('loadingPhrases', (realm.loadingPhrases || []).join('\n'), '例如：正在帮[狗狗名字]穿上云端漫步靴...')));
+        grid.appendChild(card);
+      });
+      container.appendChild(grid);
+    }
+
+    async function saveRuntimeConfig() {
+      const saveBtn = $('saveRuntimeBtn');
+      const realms = Array.from(document.querySelectorAll('.realm-card')).map((card) => ({
+        id: card.dataset.realmId,
+        name: card.querySelector('input[name="name"]').value.trim(),
+        description: card.querySelector('textarea[name="description"]').value.trim(),
+        onlineCount: Number(card.querySelector('input[name="onlineCount"]').value || 0),
+        active: card.querySelector('input[name="active"]').checked,
+        loadingPhrases: parseList(card.querySelector('textarea[name="loadingPhrases"]').value),
+      }));
+
+      setButtonLoading(saveBtn, true, '保存中...', '保存云游配置');
+      try {
+        await request('/api/admin/runtime-config', {
+          method: 'PUT',
+          body: JSON.stringify({ realms }),
+        });
+        toast('云游地图配置已更新，前端会同步生效');
+        await loadRuntimeConfig();
+      } catch (error) {
+        toast(error.message || '保存云游配置失败');
+      } finally {
+        setButtonLoading(saveBtn, false, '保存中...', '保存云游配置');
+      }
+    }
+
+    function handleTabError(containerId, paginationId, loader) {
+      return (error) => {
+        const container = $(containerId);
+        const pagination = $(paginationId);
+        clearNode(container);
+        clearNode(pagination);
+        container.appendChild(createErrorState(error.message || '当前版块加载失败。', () => {
+          void loader().catch(handleTabError(containerId, paginationId, loader));
+        }));
+      };
+    }
+
+    async function loadTab(tab) {
+      state.tab = tab;
+      document.querySelectorAll('.tab').forEach((node) => node.classList.toggle('active', node.dataset.tab === tab));
+      document.querySelectorAll('.tab-panel').forEach((panel) => panel.classList.add('hidden'));
+      $(`${tab}Tab`).classList.remove('hidden');
+
+      try {
+        if (tab === 'overview') return await loadOverview();
+        if (tab === 'users') return await loadUsers();
+        if (tab === 'pets') return await loadPets();
+        if (tab === 'market') return await loadMarket();
+        if (tab === 'love') return await loadLove();
+        if (tab === 'diaries') return await loadDiaries();
+        if (tab === 'messages') return await loadMessages();
+        if (tab === 'notifications') return await loadNotifications();
+        if (tab === 'login') return await loadLoginActivity();
+        if (tab === 'realms') return await loadRuntimeConfig();
+      } catch (error) {
+        const target = {
+          overview: ['overviewContent', null, loadOverview],
+          users: ['usersTable', 'usersPagination', loadUsers],
+          pets: ['petsTable', 'petsPagination', loadPets],
+          market: ['marketTable', 'marketPagination', loadMarket],
+          love: ['breedingTable', 'breedingPagination', loadLove],
+          diaries: ['diariesTable', 'diariesPagination', loadDiaries],
+          messages: ['messagesTable', 'messagesPagination', loadMessages],
+          notifications: ['notificationsTable', 'notificationsPagination', loadNotifications],
+          login: ['loginTable', 'loginPagination', loadLoginActivity],
+          realms: ['realmsContent', null, loadRuntimeConfig],
+        }[tab];
+
+        const container = $(target[0]);
+        clearNode(container);
+        container.appendChild(createErrorState(error.message || '数据加载失败。', () => {
+          void target[2]().catch(handleTabError(target[0], target[1], target[2]));
+        }));
+        if (target[1]) clearNode($(target[1]));
       }
     }
 
     document.querySelectorAll('.tab').forEach((buttonNode) => {
-      buttonNode.addEventListener('click', async () => {
-        document.querySelectorAll('.tab').forEach((node) => node.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach((node) => node.classList.add('hidden'));
-        buttonNode.classList.add('active');
-        state.tab = buttonNode.dataset.tab;
-        $(`${state.tab}Tab`).classList.remove('hidden');
-        await safeLoadSection(state.tab);
+      buttonNode.addEventListener('click', () => {
+        void loadTab(buttonNode.dataset.tab);
       });
     });
 
@@ -700,37 +2925,83 @@
       });
     });
 
-    $('refreshBtn').addEventListener('click', async () => {
-      setButtonLoading(refreshBtn, true, '刷新中...', '刷新数据');
-      try {
-        await safeLoadSection(state.tab);
-        toast('后台数据已刷新');
-      } catch (error) {
-        toast(error.message || '刷新失败');
-      } finally {
-        setButtonLoading(refreshBtn, false, '刷新中...', '刷新数据');
-      }
-    });
-
-    $('keyword').addEventListener('input', async (event) => {
-      state.keyword = event.target.value.trim();
-      state.pageByTab.users = 1;
-      if (state.tab === 'users') {
-        await safeLoadSection('users');
-      }
+    $('refreshBtn').addEventListener('click', () => {
+      void loadTab(state.tab).then(() => toast('当前版块已刷新')).catch((error) => toast(error.message || '刷新失败'));
     });
 
     $('logoutBtn').addEventListener('click', () => {
       setLoggedOutState('已退出后台。');
-      toast('已退出');
+      toast('已退出管理员后台');
     });
 
+    $('usersSearchBtn').addEventListener('click', () => {
+      state.pages.users = 1;
+      void loadUsers().catch(handleTabError('usersTable', 'usersPagination', loadUsers));
+    });
+    $('petsSearchBtn').addEventListener('click', () => {
+      state.pages.pets = 1;
+      void loadPets().catch(handleTabError('petsTable', 'petsPagination', loadPets));
+    });
+    $('marketSearchBtn').addEventListener('click', () => {
+      state.pages.market = 1;
+      void loadMarket().catch(handleTabError('marketTable', 'marketPagination', loadMarket));
+    });
+    $('breedingSearchBtn').addEventListener('click', () => {
+      state.pages.breeding = 1;
+      void loadLove().catch(handleTabError('breedingTable', 'breedingPagination', loadLove));
+    });
+    $('matchesSearchBtn').addEventListener('click', () => {
+      state.pages.matches = 1;
+      void loadLove().catch(handleTabError('matchesTable', 'matchesPagination', loadLove));
+    });
+    $('diariesSearchBtn').addEventListener('click', () => {
+      state.pages.diaries = 1;
+      void loadDiaries().catch(handleTabError('diariesTable', 'diariesPagination', loadDiaries));
+    });
+    $('messagesSearchBtn').addEventListener('click', () => {
+      state.pages.messages = 1;
+      void loadMessages().catch(handleTabError('messagesTable', 'messagesPagination', loadMessages));
+    });
+    $('loginSearchBtn').addEventListener('click', () => {
+      state.pages.login = 1;
+      void loadLoginActivity().catch(handleTabError('loginTable', 'loginPagination', loadLoginActivity));
+    });
+    $('createMarketBtn').addEventListener('click', () => {
+      void openMarketEditor();
+    });
+    $('createMarketOrderBtn').addEventListener('click', () => {
+      openMarketOrderEditor();
+    });
+    $('createWalkOrderBtn').addEventListener('click', () => {
+      openWalkOrderEditor();
+    });
+    $('createCareBookingBtn').addEventListener('click', () => {
+      openCareBookingEditor();
+    });
+    $('createPetLoveBtn').addEventListener('click', () => {
+      openPetLoveEditor();
+    });
+    $('createOwnerChatBtn').addEventListener('click', () => {
+      openChatSessionEditor(null, 'owner');
+    });
+    $('createPetChatBtn').addEventListener('click', () => {
+      openChatSessionEditor(null, 'pet');
+    });
+    $('sendNotificationBtn').addEventListener('click', () => {
+      void sendNotification();
+    });
+    $('saveRuntimeBtn').addEventListener('click', () => {
+      void saveRuntimeConfig();
+    });
+    $('notificationTarget').addEventListener('change', () => {
+      $('notificationUsersField').classList.toggle('hidden', $('notificationTarget').value === 'all');
+    });
+
+    $('modalCloseBtn').addEventListener('click', closeModal);
+    $('modalRoot').querySelector('.modal-backdrop').addEventListener('click', closeModal);
+
+    void ensureOptionsLoaded().catch(() => {});
     void validateTokenAndBoot();
   </script>
 </body>
 </html>
-
-
-
-
-

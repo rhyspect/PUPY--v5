@@ -13,6 +13,16 @@ import type {
 import apiService from '../services/api';
 import type { Pet } from '../types';
 import { createOwnerFromApi, createPetFromApi } from '../utils/adapters';
+import BrandEmptyState from './BrandEmptyState';
+import {
+  MARKET_ASSET_EVENT,
+  formatAssetPrice,
+  loadMarketCart,
+  loadMarketOrders,
+  type MarketCartItem,
+  type MarketOrder,
+} from '../utils/marketAssets';
+import { createMemberOrdersFromAssets } from '../utils/appDataAdapters';
 
 interface ProfileProps {
   userPet: Pet;
@@ -75,6 +85,7 @@ export default function Profile({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [creatingTwin, setCreatingTwin] = useState(false);
+  const [twinFeedback, setTwinFeedback] = useState<string | null>(null);
   const [sendingPrayer, setSendingPrayer] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [petRecord, setPetRecord] = useState<ApiPetRecord | null>(null);
@@ -84,6 +95,8 @@ export default function Profile({
   const [sellerProducts, setSellerProducts] = useState<ApiMarketProduct[]>([]);
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [prayers, setPrayers] = useState<ApiPrayerRecord[]>([]);
+  const [cartItems, setCartItems] = useState<MarketCartItem[]>(() => loadMarketCart());
+  const [marketOrders, setMarketOrders] = useState<MarketOrder[]>(() => loadMarketOrders());
   const [prayerInput, setPrayerInput] = useState('');
   const [editForm, setEditForm] = useState<EditFormState>({
     username: currentUser?.username || userPet.owner.name,
@@ -106,7 +119,7 @@ export default function Profile({
 
     setLoading(true);
     try {
-      const [userResult, petResult, diariesResult, matchesResult, productsResult, notificationsResult, prayersResult] =
+      const [userResult, petResult, diariesResult, matchesResult, productsResult, notificationsResult, prayersResult, memberAssetsResult] =
         await Promise.all([
           apiService.getCurrentUser(),
           apiService.getPetById(userPet.id),
@@ -115,6 +128,7 @@ export default function Profile({
           apiService.getSellerProducts(currentUser.id),
           apiService.getNotifications(),
           apiService.getPrayerRecords(1, 8),
+          apiService.getMemberAssets(),
         ]);
 
       const nextUser = userResult.data || currentUser;
@@ -126,6 +140,7 @@ export default function Profile({
       setSellerProducts(productsResult.data || []);
       setNotifications(notificationsResult.data || []);
       setPrayers(prayersResult.data || []);
+      setMarketOrders(createMemberOrdersFromAssets(memberAssetsResult.data));
       setEditForm({
         username: nextUser?.username || userPet.owner.name,
         signature: nextUser?.signature || userPet.owner.signature,
@@ -147,6 +162,33 @@ export default function Profile({
     void loadData();
   }, [currentUser?.id, userPet.id]);
 
+  useEffect(() => {
+    const refreshMarketAssets = async () => {
+      setCartItems(loadMarketCart());
+      if (currentUser?.id) {
+        try {
+          const result = await apiService.getMemberAssets();
+          setMarketOrders(createMemberOrdersFromAssets(result.data));
+          return;
+        } catch {
+          // Fall back to local asset cache when backend sync is unavailable.
+        }
+      }
+      setMarketOrders(loadMarketOrders());
+    };
+
+    void refreshMarketAssets();
+    const handleRefresh = () => {
+      void refreshMarketAssets();
+    };
+    window.addEventListener('storage', handleRefresh);
+    window.addEventListener(MARKET_ASSET_EVENT, handleRefresh);
+    return () => {
+      window.removeEventListener('storage', handleRefresh);
+      window.removeEventListener(MARKET_ASSET_EVENT, handleRefresh);
+    };
+  }, [currentUser?.id]);
+
   const owner = useMemo(() => createOwnerFromApi(profileUser || currentUser || {}), [profileUser, currentUser]);
   const sourceUser = profileUser || currentUser;
   const profilePet = useMemo(() => {
@@ -164,6 +206,8 @@ export default function Profile({
   );
   const unreadNotifications = notifications.filter((item) => !item.is_read).length;
   const twinReady = Boolean(petRecord?.is_digital_twin || isDigitalTwinCreated);
+  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotal = cartItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
   const saveProfile = async () => {
     if (!currentUser?.id || !petRecord?.id || saving) return;
@@ -211,6 +255,7 @@ export default function Profile({
     if (!petId || creatingTwin) return;
 
     setCreatingTwin(true);
+    setTwinFeedback(null);
     try {
       const result = await apiService.createDigitalTwin(
         petId,
@@ -230,6 +275,16 @@ export default function Profile({
       }
       onStartCreation();
       setActiveTab('virtual');
+    } catch (error) {
+      setTwinFeedback(
+        error instanceof Error
+          ? `${error.message}。已切换到本地生成体验，配置 Supabase 后会同步真实数字分身。`
+          : '数字分身接口暂不可用，已切换到本地生成体验。',
+      );
+      onProfileSync?.({ isDigitalTwinCreated: true });
+      onTwinCreated();
+      setActiveTab('virtual');
+      onStartCreation();
     } finally {
       setCreatingTwin(false);
     }
@@ -268,12 +323,12 @@ export default function Profile({
   };
 
   if (loading) {
-    return <div className="px-6 py-12"><div className="glass ambient-card rounded-[2.6rem] border border-white/50 p-8 text-center text-sm text-slate-400 shadow-sm">正在同步真实档案数据…</div></div>;
+    return <div className="px-6 py-12"><div className="brand-panel-shell ambient-card rounded-[2.6rem] p-8 text-center text-sm text-slate-400 shadow-sm">正在同步真实档案数据…</div></div>;
   }
 
   return (
     <div className="px-6 space-y-8 pb-10">
-      <section className="glass ambient-card overflow-hidden rounded-[3rem] border border-white/50 px-6 py-6 shadow-sm">
+      <section className="brand-surface brand-aura ambient-card overflow-hidden rounded-[3rem] px-6 py-6 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-3">
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary/70">{'\u4e2a\u4eba\u7a7a\u95f4'}</p>
@@ -281,6 +336,11 @@ export default function Profile({
             <p className="max-w-sm text-sm leading-relaxed text-slate-500">这里统一承接真实档案、宠物分身、通知、匹配进度和你的市场资产，确保主人视角和后台数据完全一致。</p>
           </div>
           <div className="soft-panel rounded-[2rem] border border-white/50 px-4 py-4 text-right">
+            <div className="mb-3 flex justify-end">
+              <span className="inline-flex items-center rounded-full brand-pill px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary/75">
+                PUPY · 爪住
+              </span>
+            </div>
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">欢迎回来</p>
             <p className="mt-2 text-sm font-black text-slate-900">{owner.name}</p>
             <p className="mt-1 text-xs text-slate-400">{profilePet.name} · {profilePet.type}</p>
@@ -289,9 +349,9 @@ export default function Profile({
       </section>
 
       <div className="flex justify-center">
-        <div className="glass ambient-card relative flex h-14 w-full max-w-sm rounded-[2rem] border border-white/50 p-1 shadow-sm">
+        <div className="brand-segment-shell ambient-card relative flex h-14 w-full max-w-sm rounded-[2rem] p-1 shadow-sm" role="tablist" aria-label="个人空间分区切换">
           <motion.div
-            className="absolute bottom-1 top-1 z-0 rounded-[1.8rem] bg-white shadow-md"
+            className="absolute bottom-1 top-1 z-0 rounded-[1.8rem] brand-segment-active"
             initial={false}
             animate={{
               left: activeTab === 'reality' ? '4px' : activeTab === 'virtual' ? '33.33%' : '66.66%',
@@ -306,9 +366,12 @@ export default function Profile({
           ].map((tab) => (
             <button
               key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
               onClick={() => setActiveTab(tab.key as ActiveTab)}
               className={`relative z-10 flex flex-1 items-center justify-center gap-1 text-[10px] font-black transition-colors ${
-                activeTab === tab.key ? 'text-primary' : 'text-slate-400'
+                activeTab === tab.key ? 'text-white' : 'brand-segment-idle'
               }`}
             >
               <span className="material-symbols-outlined text-base">{tab.icon}</span>
@@ -330,9 +393,11 @@ export default function Profile({
             <div className="glass ambient-card overflow-hidden rounded-[3rem] border border-white/50 shadow-sm p-8 space-y-6 relative">
               <button
                 onClick={() => setShowEditModal(true)}
-                className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-slate-400 shadow-sm transition-colors hover:text-primary"
+                className="brand-action-secondary absolute right-6 top-6 flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-slate-400 shadow-sm transition-colors hover:text-primary"
+                aria-label="编辑档案"
               >
                 <span className="material-symbols-outlined text-xl">edit</span>
+                <span className="text-[10px] font-black">编辑</span>
               </button>
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 rounded-[2.5rem] overflow-hidden shadow-xl ring-4 ring-primary/5">
@@ -453,9 +518,7 @@ export default function Profile({
                 <span className="text-[10px] font-bold text-slate-400">最近 8 条</span>
               </div>
               {diaries.length === 0 ? (
-                <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-6 shadow-sm text-sm text-slate-400 text-center">
-                  还没有新的日记内容，后续发布后会同步显示在这里。
-                </div>
+                <BrandEmptyState compact icon="menu_book" title="还没有新的日记内容，后续发布后会同步显示在这里。" />
               ) : (
                 <div className="space-y-4">
                   {diaries.map((diary) => (
@@ -537,10 +600,17 @@ export default function Profile({
               <button
                 onClick={() => void createTwin()}
                 disabled={creatingTwin}
-                className="relative w-full py-4 rounded-[2rem] bg-primary text-white font-black shadow-lg shadow-primary/20 disabled:opacity-60"
+                className="brand-action-primary relative flex w-full items-center justify-center gap-2 rounded-[2rem] py-4 font-black disabled:opacity-60"
+                aria-label={twinReady ? '重新同步数字分身' : '立即生成数字分身'}
               >
+                <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
                 {twinReady ? '重新同步数字分身' : creatingTwin ? '正在生成中…' : '立即生成数字分身'}
               </button>
+              {twinFeedback && (
+                <div className="rounded-[1.8rem] border border-amber-100 bg-amber-50/90 px-5 py-4 text-sm font-semibold leading-relaxed text-amber-700">
+                  {twinFeedback}
+                </div>
+              )}
             </div>
 
             <div className="glass ambient-card rounded-[3rem] border border-white/50 shadow-sm p-8 space-y-5">
@@ -569,15 +639,15 @@ export default function Profile({
                 <button
                   onClick={() => void submitPrayer()}
                   disabled={sendingPrayer}
-                  className="w-11 h-11 rounded-2xl bg-primary text-white flex items-center justify-center disabled:opacity-60"
+                  className="brand-action-primary flex h-11 items-center justify-center gap-1.5 rounded-2xl px-3 text-white disabled:opacity-60"
+                  aria-label="发送祈愿"
                 >
                   <span className="material-symbols-outlined">send</span>
+                  <span className="text-[10px] font-black">发送</span>
                 </button>
               </div>
               {prayers.length === 0 ? (
-                <div className="soft-panel rounded-[2rem] border border-white/50 p-6 text-center text-sm text-slate-400">
-                  还没有祈愿记录，发一条试试看。
-                </div>
+                <BrandEmptyState compact icon="auto_awesome" title="还没有祈愿记录，发一条试试看。" />
               ) : (
                 <div className="space-y-4">
                   {prayers.map((record) => (
@@ -608,20 +678,93 @@ export default function Profile({
             exit={{ opacity: 0, y: -16 }}
             className="space-y-8"
           >
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-5 shadow-sm">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">未读通知</p>
                 <p className="mt-2 text-2xl font-black text-slate-900">{unreadNotifications}</p>
               </div>
               <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-5 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">购物车商品</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">{cartItemCount}</p>
+              </div>
+              <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-5 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">订单记录</p>
+                <p className="mt-2 text-2xl font-black text-slate-900">{marketOrders.length}</p>
+              </div>
+              <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-5 shadow-sm">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">发布资产</p>
                 <p className="mt-2 text-2xl font-black text-slate-900">{sellerProducts.length}</p>
               </div>
-              <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-5 shadow-sm">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">祈愿档案</p>
-                <p className="mt-2 text-2xl font-black text-slate-900">{prayers.length}</p>
-              </div>
             </div>
+
+            <section className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">我的加购商品</h3>
+                <span className="text-[10px] font-bold text-slate-400">合计 {formatAssetPrice(cartTotal)}</span>
+              </div>
+              {cartItems.length === 0 ? (
+                <BrandEmptyState compact icon="shopping_bag" title="还没有加购商品。去爪住集市的主粮用品页选择数量并加入购物车后，会同步显示在这里。" />
+              ) : (
+                <div className="space-y-3">
+                  {cartItems.map((item) => (
+                    <div key={item.productId} className="glass ambient-card rounded-[2.5rem] border border-white/50 shadow-sm p-5 flex items-center gap-4">
+                      <img
+                        src={item.image || EMPTY_IMAGE}
+                        alt={item.title}
+                        className="w-16 h-16 rounded-2xl object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-slate-900 truncate">{item.title}</p>
+                        <p className="text-xs text-slate-500 truncate mt-1">{item.sellerName} · {formatAssetPrice(item.unitPrice)}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-2">已加购 {item.quantity} 件</p>
+                      </div>
+                      <span className="text-sm font-black text-primary whitespace-nowrap">
+                        {formatAssetPrice(item.unitPrice * item.quantity)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">订单与预约记录</h3>
+                <span className="text-[10px] font-bold text-slate-400">购物结算 / 商家预约</span>
+              </div>
+              {marketOrders.length === 0 ? (
+                <BrandEmptyState compact icon="receipt_long" title="还没有订单记录。主粮用品结算和护理养护预约会沉淀到这里。" />
+              ) : (
+                <div className="space-y-3">
+                  {marketOrders.map((order) => (
+                    <div key={order.id} className="glass ambient-card rounded-[2.5rem] border border-white/50 shadow-sm p-5 flex items-center gap-4">
+                      <img
+                        src={order.image || EMPTY_IMAGE}
+                        alt={order.title}
+                        className="w-16 h-16 rounded-2xl object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`rounded-full px-2 py-1 text-[9px] font-black ${order.kind === 'booking' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                            {order.kind === 'booking' ? '预约' : '订单'}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400">{formatTimestamp(order.createdAt)}</span>
+                        </div>
+                        <p className="text-sm font-black text-slate-900 truncate mt-2">{order.title}</p>
+                        <p className="text-xs text-slate-500 truncate mt-1">
+                          {order.kind === 'booking' ? `${order.appointmentSlot || '待确认时间'} · ${order.sellerName}` : `${order.quantity} 件 · ${order.status}`}
+                        </p>
+                      </div>
+                      <span className="text-sm font-black text-primary whitespace-nowrap">
+                        {formatAssetPrice(order.total)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
 
             <section className="space-y-3">
               <div className="flex items-center justify-between px-1">
@@ -629,9 +772,7 @@ export default function Profile({
                 <span className="text-[10px] font-bold text-slate-400">真实市场数据</span>
               </div>
               {sellerProducts.length === 0 ? (
-                <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-6 shadow-sm text-sm text-slate-400 text-center">
-                  你还没有新的市场发布。
-                </div>
+                <BrandEmptyState compact icon="storefront" title="你还没有新的市场发布。" />
               ) : (
                 <div className="space-y-3">
                   {sellerProducts.map((item) => (
@@ -666,16 +807,15 @@ export default function Profile({
                 <span className="text-[10px] font-bold text-slate-400">点击后标记已读</span>
               </div>
               {notifications.length === 0 ? (
-                <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-6 shadow-sm text-sm text-slate-400 text-center">
-                  暂时没有新的系统通知。
-                </div>
+                <BrandEmptyState compact icon="notifications" title="暂时没有新的系统通知。" />
               ) : (
                 <div className="space-y-3">
                   {notifications.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => void markNotificationAsRead(item.id)}
-                      className="w-full text-left glass ambient-card rounded-[2.5rem] border border-white/50 shadow-sm p-5 space-y-3"
+                      className="w-full text-left brand-list-row ambient-card rounded-[2.5rem] p-5 space-y-3"
+                      aria-label={`标记通知已读：${item.message}`}
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
@@ -703,9 +843,7 @@ export default function Profile({
                 <span className="text-[10px] font-bold text-slate-400">最近 6 条</span>
               </div>
               {matches.length === 0 ? (
-                <div className="glass ambient-card rounded-[2.5rem] border border-white/50 p-6 shadow-sm text-sm text-slate-400 text-center">
-                  还没有新的匹配记录。
-                </div>
+                <BrandEmptyState compact icon="favorite" title="还没有新的匹配记录。" />
               ) : (
                 <div className="space-y-3">
                   {matches.slice(0, 6).map((match) => {
@@ -763,7 +901,8 @@ export default function Profile({
                 </div>
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-slate-400 shadow-sm"
+                  className="brand-action-secondary flex h-10 w-10 items-center justify-center rounded-full text-slate-400 shadow-sm"
+                  aria-label="关闭编辑档案弹窗"
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
@@ -808,14 +947,14 @@ export default function Profile({
               <div className="p-8 pt-4 border-t border-slate-100 flex gap-3">
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="flex-1 py-4 rounded-[2rem] bg-slate-100 text-slate-700 font-black"
+                  className="brand-action-secondary flex-1 rounded-[2rem] py-4 font-black text-slate-700"
                 >
                   取消
                 </button>
                 <button
                   onClick={() => void saveProfile()}
                   disabled={saving}
-                  className="flex-1 py-4 rounded-[2rem] bg-primary text-white font-black shadow-lg shadow-primary/20 disabled:opacity-60"
+                  className="brand-action-primary flex-1 rounded-[2rem] py-4 font-black disabled:opacity-60"
                 >
                   {saving ? '保存中…' : '保存修改'}
                 </button>
@@ -827,5 +966,3 @@ export default function Profile({
     </div>
   );
 }
-
-

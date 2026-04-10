@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase.js';
 import { BreedingRequest, ApiResponse, PaginatedResponse } from '../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
+import { syncPetLoveRecordFromBreeding } from './operationsStore.js';
 
 export class BreedingService {
   static async createBreedingRequest(
@@ -25,6 +26,15 @@ export class BreedingService {
         });
 
       if (error) throw error;
+
+      await syncPetLoveRecordFromBreeding({
+        senderId,
+        receiverId,
+        senderPetId,
+        receiverPetId,
+        notes,
+        breedingStatus: 'pending',
+      });
 
       const request = await this.getBreedingRequestById(requestId);
       return {
@@ -133,6 +143,15 @@ export class BreedingService {
       if (error || !data || data.length === 0) {
         throw error || new Error('更新失败');
       }
+
+      await syncPetLoveRecordFromBreeding({
+        senderId: data[0].sender_id,
+        receiverId: data[0].receiver_id,
+        senderPetId: data[0].sender_pet_id,
+        receiverPetId: data[0].receiver_pet_id,
+        notes: data[0].notes || '',
+        breedingStatus: status,
+      });
 
       return {
         success: true,

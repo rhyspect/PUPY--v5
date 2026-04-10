@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import FeatureModal from './FeatureModal';
+import BrandMark from './BrandMark';
 import type { AppLocale } from '../utils/locale';
 import { localeOptions } from '../utils/locale';
 import { getAppCopy } from '../utils/copy';
@@ -40,10 +41,10 @@ export default function Settings({
   const copy = getAppCopy(locale);
 
   const rows = [
-    { key: 'notifications', icon: 'notifications', label: copy.settings.notifications, tone: 'text-blue-500' },
-    { key: 'privacy', icon: 'lock', label: copy.settings.privacy, tone: 'text-emerald-500' },
-    { key: 'language', icon: 'language', label: copy.settings.language, tone: 'text-orange-500' },
-    { key: 'theme', icon: 'palette', label: copy.settings.theme, tone: 'text-pink-500' },
+    { key: 'notifications', icon: 'notifications', label: copy.settings.notifications, tone: 'text-blue-500', hint: locale === 'zh-CN' ? '查看说明' : 'Details' },
+    { key: 'privacy', icon: 'lock', label: copy.settings.privacy, tone: 'text-emerald-500', hint: locale === 'zh-CN' ? '安全策略' : 'Security' },
+    { key: 'language', icon: 'language', label: copy.settings.language, tone: 'text-orange-500', hint: locale === 'zh-CN' ? '中文' : 'English' },
+    { key: 'theme', icon: 'palette', label: copy.settings.theme, tone: 'text-pink-500', hint: locale === 'zh-CN' ? '品牌样式' : 'Brand UI' },
   ] as const;
 
   const featureContent = useMemo(() => {
@@ -73,12 +74,13 @@ export default function Settings({
 
   return (
     <div className="fixed inset-0 z-[150] mx-auto flex max-w-md flex-col bg-surface">
-      <header className="glass border-b border-white/50 p-6">
+      <header className="brand-panel-shell border-b border-white/50 p-6">
         <div className="flex items-center gap-4">
-          <button type="button" onClick={onBack} className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/75 text-slate-400 transition hover:text-primary" aria-label="返回首页">
+          <button type="button" onClick={onBack} className="brand-action-secondary flex h-11 w-11 items-center justify-center rounded-2xl text-slate-400 transition hover:text-primary" aria-label="返回首页">
             <span className="material-symbols-outlined">arrow_back_ios</span>
           </button>
           <div>
+            <p className="brand-section-kicker text-[10px] font-black uppercase">PUPY · Settings</p>
             <h2 className="text-xl font-black tracking-tight text-slate-900 font-headline">{copy.settings.title}</h2>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{copy.shell.sessionAndControls}</p>
           </div>
@@ -88,9 +90,12 @@ export default function Settings({
       <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
         <section className="space-y-4">
           <div className="px-1">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">宠物与账号</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">账号与宠物档案</h3>
           </div>
-          <div className="frost-card floating-highlight rounded-[2.6rem] px-6 py-6">
+          <div className="brand-panel-shell brand-aura rounded-[2.6rem] px-6 py-6">
+            <div className="mb-5">
+              <BrandMark mode="lockup" size="sm" subtitle="爪住 · Account & Companion Controls" />
+            </div>
             <div className="flex items-center gap-4">
               <div className="h-18 w-18 overflow-hidden rounded-[1.6rem] ring-4 ring-primary/10">
                 <img src={userPet?.image || DEFAULT_PET_IMAGE} alt={userPet?.name || 'Pet'} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
@@ -106,9 +111,9 @@ export default function Settings({
 
         <section className="space-y-4">
           <div className="px-1">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">后端状态</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">服务连接与权限</h3>
           </div>
-          <div className="glass rounded-[2.6rem] border border-white/50 p-6 shadow-sm space-y-4">
+          <div className="brand-panel-shell rounded-[2.6rem] p-6 shadow-sm space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-black text-slate-900">{copy.settings.apiConnection}</p>
@@ -124,12 +129,15 @@ export default function Settings({
                 <p className="mt-2 text-sm font-black text-slate-900">{backendStatus.environment || copy.settings.unknown}</p>
               </div>
               {canOpenAdmin ? (
-                <button type="button" onClick={onOpenAdmin} className="rounded-[1.5rem] bg-slate-900 p-4 text-left text-white shadow-lg" aria-label={copy.settings.openAdminPanel}>
+                <button type="button" onClick={onOpenAdmin} className="brand-action-dark rounded-[1.5rem] p-4 text-left" aria-label={copy.settings.openAdminPanel}>
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/55">{copy.settings.admin}</p>
-                  <p className="mt-2 text-sm font-black">{copy.settings.openAdminPanel}</p>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <p className="text-sm font-black">{copy.settings.openAdminPanel}</p>
+                    <span className="material-symbols-outlined text-lg text-white/80">open_in_new</span>
+                  </div>
                 </button>
               ) : (
-                <div className="soft-panel rounded-[1.5rem] p-4">
+                <div className="brand-list-row rounded-[1.5rem] p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">{copy.settings.admin}</p>
                   <p className="mt-2 text-sm font-black text-slate-900">{'当前账号暂无后台权限'}</p>
                 </div>
@@ -141,20 +149,23 @@ export default function Settings({
 
         <section className="space-y-4">
           <div className="px-1">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">通用设置</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">{copy.settings.general}</h3>
           </div>
-          <div className="glass overflow-hidden rounded-[2.6rem] border border-white/50 shadow-sm">
+          <div className="brand-panel-shell overflow-hidden rounded-[2.6rem] shadow-sm">
             {rows.map((row) => (
               <button
                 type="button"
                 key={row.key}
                 onClick={() => setActiveFeature(row.key as GeneralFeature)}
-                className="flex w-full items-center gap-4 border-b border-white/55 px-5 py-5 text-left transition-colors last:border-none hover:bg-white/50"
+                className="brand-list-row flex w-full items-center gap-4 border-b border-white/55 px-5 py-5 text-left transition-colors last:border-none"
               >
                 <div className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-white/75 ${row.tone}`}>
                   <span className="material-symbols-outlined">{row.icon}</span>
                 </div>
-                <span className="flex-1 font-medium text-slate-700">{row.label}</span>
+                <div className="min-w-0 flex-1">
+                  <span className="block font-medium text-slate-700">{row.label}</span>
+                  <span className="mt-1 block text-[11px] font-bold text-slate-400">{row.hint}</span>
+                </div>
                 <span className="material-symbols-outlined text-slate-300">chevron_right</span>
               </button>
             ))}
@@ -163,14 +174,17 @@ export default function Settings({
 
         <section className="space-y-4">
           <div className="px-1">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">风险操作</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">{copy.settings.risk}</h3>
           </div>
-          <div className="glass overflow-hidden rounded-[2.6rem] border border-white/50 shadow-sm">
-            <button type="button" onClick={onReset} className="flex w-full items-center gap-4 px-5 py-5 text-red-500 transition-colors hover:bg-red-50/80" aria-label="重置应用与引导流程">
+          <div className="brand-panel-shell overflow-hidden rounded-[2.6rem] shadow-sm">
+            <button type="button" onClick={onReset} className="brand-list-row flex w-full items-center gap-4 px-5 py-5 text-red-500 transition-colors hover:bg-red-50/80" aria-label="重置应用与引导流程">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50">
                 <span className="material-symbols-outlined">restart_alt</span>
               </div>
-              <span className="flex-1 text-left font-medium">{copy.settings.reset}</span>
+              <div className="flex-1 text-left">
+                <span className="block font-medium">{copy.settings.reset}</span>
+                <span className="mt-1 block text-[11px] font-bold text-red-300">清空当前引导与本地会话缓存</span>
+              </div>
             </button>
           </div>
         </section>

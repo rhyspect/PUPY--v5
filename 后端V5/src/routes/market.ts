@@ -1,6 +1,7 @@
 ﻿import Express from 'express';
 import { AuthRequest, authMiddleware } from '../middleware/authMiddleware.js';
 import MarketService from '../services/marketService.js';
+import { uploadImageList } from '../services/uploadService.js';
 import { getPaginationParams } from '../utils/pagination.js';
 
 const router = Express.Router();
@@ -32,12 +33,13 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Express.Response)
       return res.status(400).json({ success: false, error: '缺少必填参数', code: 400 });
     }
 
+    const nextImages = await uploadImageList(req.user.user_id, Array.isArray(images) ? images : [], 'market');
     const result = await MarketService.createProduct(req.user.user_id, {
       title,
       description,
       category,
       price,
-      images,
+      images: nextImages,
       type,
       requirements,
       pet_id,
@@ -99,7 +101,16 @@ router.get('/seller/:sellerId', async (req: Express.Request, res: Express.Respon
 
 router.put('/:productId', authMiddleware, async (req: AuthRequest, res: Express.Response) => {
   try {
-    const result = await MarketService.updateProduct(req.params.productId, req.body);
+    if (!req.user?.user_id) {
+      return res.status(401).json({ success: false, error: '未认证', code: 401 });
+    }
+
+    const updates = { ...(req.body as Record<string, unknown>) };
+    if (Array.isArray(updates.images)) {
+      updates.images = await uploadImageList(req.user.user_id, updates.images.filter((image): image is string => typeof image === 'string'), 'market');
+    }
+
+    const result = await MarketService.updateProduct(req.params.productId, updates);
     res.json(result);
   } catch (error) {
     console.error('Update market product error:', error);

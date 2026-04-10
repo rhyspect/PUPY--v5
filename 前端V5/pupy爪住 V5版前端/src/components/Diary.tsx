@@ -1,7 +1,9 @@
 ﻿import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { ApiDiaryRecord } from '../services/api';
+import type { ApiDiaryRecord, AppDiarySummary } from '../services/api';
 import apiService from '../services/api';
+import BrandMark from './BrandMark';
+import BrandEmptyState from './BrandEmptyState';
 
 interface DiaryProps {
   onBack: () => void;
@@ -41,6 +43,7 @@ function getStoredPetId() {
 
 export default function Diary({ onBack }: DiaryProps) {
   const [entries, setEntries] = useState<ApiDiaryRecord[]>([]);
+  const [summary, setSummary] = useState<AppDiarySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,11 +55,16 @@ export default function Diary({ onBack }: DiaryProps) {
     setLoading(true);
     setError(null);
     try {
-      const result = await apiService.getUserDiaries(1, 12);
+      const [result, summaryResult] = await Promise.all([
+        apiService.getUserDiaries(1, 12),
+        apiService.getAppDiarySummary(),
+      ]);
       setEntries(result.data || []);
+      setSummary(summaryResult.data || null);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : '加载日记失败');
       setEntries([]);
+      setSummary(null);
     } finally {
       setLoading(false);
     }
@@ -74,6 +82,18 @@ export default function Diary({ onBack }: DiaryProps) {
       const result = await apiService.createDiary(petId, form.title.trim(), form.content.trim(), undefined, form.mood, ['日记'], false);
       if (result.data) {
         setEntries((prev) => [result.data as ApiDiaryRecord, ...prev]);
+        setSummary((prev) => ({
+          total: (prev?.total || 0) + 1,
+          totalLikes: prev?.totalLikes || 0,
+          totalComments: prev?.totalComments || 0,
+          latest: {
+            id: result.data.id,
+            title: result.data.title,
+            created_at: result.data.created_at,
+            is_public: result.data.is_public,
+            mood: result.data.mood,
+          },
+        }));
       }
       setForm({ title: '', content: '', mood: '治愈' });
       setShowComposer(false);
@@ -93,7 +113,9 @@ export default function Diary({ onBack }: DiaryProps) {
             <span className="material-symbols-outlined">arrow_back_ios_new</span>
           </button>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-primary/70">PUPY Diary</p>
+            <div className="mb-2">
+              <BrandMark mode="lockup" size="sm" subtitle="Diary · Daily Companion Archive" />
+            </div>
             <h2 className="text-xl font-black tracking-tight text-slate-900">宠物日记</h2>
           </div>
           <button
@@ -119,7 +141,7 @@ export default function Diary({ onBack }: DiaryProps) {
             </div>
             <div className="rounded-[1.8rem] bg-white/70 px-4 py-3 text-right shadow-sm">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">记录总数</p>
-              <p className="mt-1 text-2xl font-black text-slate-900">{entries.length}</p>
+              <p className="mt-1 text-2xl font-black text-slate-900">{summary?.total ?? entries.length}</p>
             </div>
           </div>
         </section>
@@ -133,20 +155,13 @@ export default function Diary({ onBack }: DiaryProps) {
         {loading ? (
           <div className="frost-card rounded-[2.4rem] p-8 text-center text-sm text-slate-400">正在同步真实日记数据…</div>
         ) : entries.length === 0 ? (
-          <div className="frost-card rounded-[2.4rem] p-8 text-center space-y-4">
-            <div className="mx-auto flex h-18 w-18 items-center justify-center rounded-[2rem] bg-primary/10 text-primary">
-              <span className="material-symbols-outlined text-4xl">auto_stories</span>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-black text-slate-900">还没有新的日记</h3>
-              <p className="text-sm leading-relaxed text-slate-500">
-                先写下今天散步、喂食、训练或社交的小片段，后续会在个人页和日记页一起展示。
-              </p>
-            </div>
-            <button type="button" onClick={() => setShowComposer(true)} className="rounded-[1.8rem] bg-primary px-5 py-3 text-sm font-black text-white shadow-lg shadow-primary/20">
-              写第一篇日记
-            </button>
-          </div>
+          <BrandEmptyState
+            icon="auto_stories"
+            title="还没有新的日记"
+            description="先写下今天散步、喂食、训练或社交的小片段，后续会在个人页和日记页一起展示。"
+            actionLabel="写第一篇日记"
+            onAction={() => setShowComposer(true)}
+          />
         ) : (
           <div className="space-y-5">
             {entries.map((entry) => (
