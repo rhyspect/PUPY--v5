@@ -1,0 +1,9 @@
+{
+  "name": "pupy-vercel-web",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "postinstall": "npm --prefix \"../前端V5/pupy爪住 V5版前端\" install",
+    "build": "npm --prefix \"../前端V5/pupy爪住 V5版前端\" run build && rm -rf dist && cp -R \"../前端V5/pupy爪住 V5版前端/dist\" dist"
+  }
+}
